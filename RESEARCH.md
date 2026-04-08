@@ -28,7 +28,7 @@ Apple exposes Screen Time programmatically through three frameworks introduced a
 - **ManagedSettings is local**: Settings written by code on the parent's device do **not** propagate to the child's device. Apple's own Screen Time UI uses iCloud sync for the system schedule, but third-party apps must build their own sync (CloudKit, push, etc.).
 - **ApplicationToken portability**: Tokens are opaque and **device-scoped**. Tokens selected via `FamilyActivityPicker` on a parent device **cannot be applied** on the child device — they're meaningless there. The picker must be presented on the device where the shield will be enforced (or via the parent->child picker flow Apple added in iOS 16, which returns tokens valid on the child device but only when launched in that specific guardian context).
 - **Background execution**: DeviceActivityMonitor extensions run in a tightly sandboxed background process; you can re-write the `ManagedSettingsStore` and schedule new monitors there.
-- **Entitlement**: `com.apple.developer.family-controls` requires Apple approval (often slow). Distribution requires it on both the app and any extensions.
+- **Entitlement**: `com.apple.developer.family-controls` has two variants — *development* (auto-granted with a paid Apple Developer Program membership, no application) and *distribution* (requires Apple's manual review, often slow). For a household tool that is never distributed via TestFlight or the App Store, the development variant is sufficient — see §10 below.
 - **macOS support**: FamilyControls / ManagedSettings / DeviceActivity are available on macOS 13+ with similar semantics. SwiftUI multi-platform app feasible.
 - **Notification "request more time" flow**: Implemented entirely by Apple's system Screen Time. It is **orthogonal** to ManagedSettings shields written by a third-party app — but if a third-party shield is active, the system Ask-for-More-Time UI does not unlock it. To preserve the existing flow, the system Downtime should remain the source of truth for the user-visible block, **or** the third-party app must implement its own request/approval channel.
 
@@ -82,14 +82,63 @@ Two viable strategies:
 ---
 
 ## 8. Open Questions / Risks
-1. Apple entitlement approval lead time and policy (consumer-targeted family controls apps have been approved but reviewers are strict).
+1. Apple entitlement approval lead time and policy (consumer-targeted family controls apps have been approved but reviewers are strict). **Mitigated for personal/household use by §9.**
 2. Reliability of `DeviceActivityMonitor` background callbacks across device sleep/reboot — community reports occasional missed events.
 3. Whether the user is willing to lose Apple's native Ask-For-More-Time UI in exchange for richer scheduling, or wants the app to reimplement that flow (notifications + approval round-trip via CloudKit/APNs).
 4. macOS Screen Time has historically lagged iOS in API completeness — verify before committing to Mac-side enforcement.
 
 ---
 
-## 9. Key References
+## 9. Development-only entitlement path (single-developer household)
+
+For this user — a developer with full physical control of every device that needs the app — Apple's slow distribution-entitlement review can be bypassed entirely by living permanently on the **development** code-signing path. This significantly weakens the deployment-cost critiques that PLAN_A and PLAN_B received and removes the App-Review-rejection risk from any in-app reimplementation of the request-more-time flow.
+
+### What is unlocked without applying for the distribution entitlement
+- **Paid Apple Developer Program membership ($99/year)** is sufficient. In Xcode's Signing & Capabilities pane, "Family Controls" appears as a checkable capability immediately; no application form, no review.
+- **Development provisioning profiles** issued by Xcode automatically include `com.apple.developer.family-controls` once the capability is enabled on the App ID.
+- **Full API surface works in development builds**: `FamilyControls`, `ManagedSettings`, `DeviceActivity`, `DeviceActivityMonitor` extension, `ShieldConfiguration` extension, `ShieldAction` extension. Both `.individual` and `.child` authorizations work, including the parent-passcode approval flow on the child device.
+- **Install on any device registered to your developer account**: 100 iPhones, 100 iPads, 100 Macs per year. A family will use a handful. Devices are registered with one click in Xcode the first time you build to them.
+- **Builds run indefinitely** — there is no 7-day expiry on a paid-account development build. The expiry that affects this path is the *provisioning profile* one (12 months); a rebuild + reinstall refreshes it.
+- **Sibling app on the child's device** installs the same way (USB or Wi-Fi pairing). The `.child` authorization flow is enforced by iOS at runtime, not by entitlement state, so it behaves identically to a production app.
+- **No App Review.** This eliminates a specific risk CRITIQUE_2 raised against PLAN_A: that a `ShieldActionExtension` reimplementing Apple's Ask-For-More-Time sheet would be rejected at review. There is no review.
+
+### What is **not** available on the development path
+- **TestFlight, App Store, ad-hoc, or notarized direct download**: all require a *distribution* provisioning profile, which requires the distribution variant of the entitlement, which requires Apple's manual approval. None of these are needed for a household tool the developer installs themselves.
+- **Free Personal Team** (no $99 fee): Family Controls is on the personal-team blocklist; the capability is greyed out. The paid program is required.
+- **Hand-off to a non-developer**: anyone who would otherwise install the app via TestFlight cannot. This path is exclusively for households where one person owns the build infrastructure and all the target devices.
+
+### CloudKit on the development path
+CloudKit containers exist in two parallel environments — **Development** and **Production** — and a build automatically uses the environment matching its code-signing type. Development builds → Development CloudKit; distribution builds → Production CloudKit. They are separate databases with separate schemas, both fully iCloud-backed and end-to-end encrypted.
+
+Implications for this project:
+- Development CloudKit is created automatically with the container; no "deploy" step is required.
+- Schema is **mutable forever** in Development — record types, fields, and indexes can be added, removed, or renamed at any time, even with running production users. Production schema, by contrast, is append-only.
+- All CloudKit features behave identically in Development: private database, `CKShare` invitations to a child Apple ID, `CKQuerySubscription` silent pushes that wake `DeviceActivityMonitor` extensions, conflict resolution, etc. The under-13 CKShare quirks RESEARCH §4 mentions exist in both environments equally.
+- The CloudKit Dashboard (`icloud.developer.apple.com/dashboard`) exposes the Development environment for browsing records, editing the schema, and inspecting subscription deliveries — useful for debugging without instrumentation in the app itself.
+- Quotas on Development are well above what a household-scale schedule store will ever consume.
+
+In short: the entire CloudKit-based design in PLAN_A and PLAN_B can run permanently against the Development environment. There is never a need to click "Deploy Schema to Production."
+
+### Operating costs of the development path
+- **$99/year** Apple Developer Program renewal. Lapsing this revokes provisioning profiles on next device check-in.
+- **Annual rebuild**: development provisioning profiles expire after 12 months. The installed app keeps running until iOS revalidates the profile, but the safe practice is a calendar reminder to rebuild and reinstall yearly. Per device. ~10 minutes per device per year.
+- **Each new family device** must be registered to the developer account once and installed-to once via cable or Wi-Fi pairing. Within the per-year device-slot quota for a household.
+- **macOS app/daemon**: installs from Xcode the same way; the development entitlement covers macOS targets equivalently. (The macOS-Screen-Time-API-parity caveat in §6 still applies — that is a runtime API gap, not an entitlement gap.)
+
+### Effect on plan ranking
+- PLAN_A and PLAN_B both become substantially cheaper to ship. The "6 weeks of entitlement review" overhead in CRITIQUE_1/2 drops to zero. The "App Review may reject the AFMT-imitating ShieldActionExtension" risk in CRITIQUE_2 also drops to zero.
+- PLAN_C is unaffected — it does not use FamilyControls and the entitlement question never applied to it. Its blockers (supervision wipe, MDM vendor cert) are separate Apple gates that the development entitlement path does not address.
+- The remaining critiques against A and B (the `.systemDowntimeMirror` fiction in A; the daemon-can't-hold-FamilyControls-auth issue in B; the AFMT-only-on-one-window honesty problem common to both; the DeviceActivityMonitor reliability concerns) are unchanged.
+
+### Key references for §9
+- Apple: Configuring Family Controls — https://developer.apple.com/documentation/xcode/configuring-family-controls
+- Apple: Requesting the Family Controls entitlement — https://developer.apple.com/documentation/familycontrols/requesting-the-family-controls-entitlement
+- Apple Dev Forum: development vs distribution Family Controls profiles — https://developer.apple.com/forums/thread/701874
+- Apple Dev Forum: TestFlight requires the distribution entitlement — https://developer.apple.com/forums/thread/712870
+
+---
+
+## 10. Key References
 - Apple: Screen Time Technology Frameworks — https://developer.apple.com/documentation/screentimeapidocumentation
 - Apple: FamilyControls — https://developer.apple.com/documentation/familycontrols
 - Apple: DeviceActivitySchedule — https://developer.apple.com/documentation/deviceactivity/deviceactivityschedule
