@@ -1,134 +1,156 @@
 # PLAN_A — Native Swift + CloudKit Screen Time Scheduler
 
 ## Context
-Per RESEARCH.md, Apple's FamilyControls / ManagedSettings / DeviceActivity frameworks let a third-party app shield apps and run code on schedule, but `ApplicationToken`s are device-scoped, ManagedSettings only writes the local store, and any third-party shield bypasses Apple's native "request more time" UI. This plan embraces those frameworks directly with a multiplatform SwiftUI app and CloudKit for cross-device sync, and addresses the AFMT problem with a hybrid: Apple's system Downtime continues to enforce the dominant block (preserving native AFMT), while additional intra-day windows are enforced by our own ManagedSettings shields with an in-app reimplementation of request/approve.
+Apple's FamilyControls / ManagedSettings / DeviceActivity (RESEARCH §1) let a third-party app shield apps on a schedule on iOS 16+, iPadOS 16+, and macOS 13+. Per RESEARCH §9 this household runs on the **paid-developer-program development entitlement** path: no distribution review, no App Review, schema mutable in Development CloudKit forever, $99/yr plus one annual reinstall per device. That eliminates the entitlement-delay and AFMT-imitation-rejection risks prior drafts carried.
+
+Target child devices: **one iPad on iPadOS 26** (full modern API surface) and **one iMac 2017 on macOS 13 Ventura** (Screen Time APIs present, with known parity gaps — see Enforcement). Parent controls run on the same multiplatform app on the parent's Mac and iPhone. The Mac is always-on and is the canonical writer; iPhone is intermittent.
+
+The prior draft proposed a hybrid of Apple's system Downtime (for the dominant window) and third-party shields (for the rest), to preserve Apple's native "more time" UI on at least one window. The hybrid is **dropped**. It was a convention, not an integration: the app could not read back system Downtime, so drift was silent, and two enforcement regimes ran side-by-side with no arbitration (CRITIQUE_1/2/3 all hit this). With the user's relaxed AFMT requirement below, the hybrid's only justification disappears. The revised plan runs **one enforcement regime** — third-party ManagedSettings shields on every window — with an in-app request/approve flow.
+
+## Ask-For-More-Time (simplified per the new requirement)
+The child does **not** see a pixel-perfect reimplementation of Apple's sheet. The flow:
+
+1. Child taps a shielded app → the `ShieldActionExtension` exposes an "Ask for time" action.
+2. Tap writes `CDExtensionRequest` to a local outbox (extension may be killed mid-write), then to CloudKit.
+3. `CKQuerySubscription` silent push wakes parent devices.
+4. Parent sees a standard `UNNotification` with four `UNNotificationAction`s: **Reject / +15m / +1h / Rest-of-day** (where rest-of-day = next local midnight in the **child's** timezone).
+5. Parent taps an action → device writes a `CDOverride(kind, expiresAt)` to CloudKit.
+6. Child's DAM extension wakes via push, clears the `ManagedSettingsStore` shield for the granted duration via a one-shot tail `DeviceActivitySchedule`, or holds it on reject.
+
+Round-trip target: <10s with both ends online. The Mac daemon is the always-online fallback when the parent iPhone is asleep — it surfaces the same action notification in the logged-in macOS session.
 
 ## Architecture diagram
 
 ```mermaid
 flowchart LR
   subgraph Parent_Mac[Parent Mac always-on]
-    UIm[SwiftUI App]
+    PUIm[SwiftUI Controller App]
     Daemon[SchedulerDaemon LaunchAgent]
     LSm[(LocalStore GRDB)]
   end
   subgraph Parent_iPhone
-    UIp[SwiftUI App]
-    DAMp[DeviceActivityMonitor Ext]
-    MSp[ManagedSettingsStore]
+    PUIp[SwiftUI App]
+    DAMp[DAM Ext]
   end
-  subgraph Child_iPhone
-    UIc[Sibling App child auth]
-    DAMc[DeviceActivityMonitor Ext]
-    SAEc[ShieldAction Ext - Request More Time]
-    MSc[ManagedSettingsStore]
-    SysDT[System Downtime - native AFMT]
+  subgraph Child_iPad[Child iPad iPadOS 26]
+    CUIi[Sibling App .child]
+    DAMi[DAM Ext]
+    SAEi[ShieldAction Ext]
+    MSi[ManagedSettingsStore]
   end
-  CK[(CloudKit private DB + CKShare)]
+  subgraph Child_Mac[Child iMac Ventura]
+    CUIm[Sibling App .child]
+    DAMm[DAM Ext]
+    SAEm[ShieldAction Ext]
+    MSm[ManagedSettingsStore]
+  end
+  CK[(CloudKit Dev + CKShare)]
   APNs[(APNs)]
-  UIm <--> CK
+  PUIm <--> CK
   Daemon <--> CK
-  UIp <--> CK
-  UIc <--> CK
+  PUIp <--> CK
+  CUIi <--> CK
+  CUIm <--> CK
   CK -- silent push --> APNs
   APNs --> DAMp
-  APNs --> DAMc
-  DAMc --> MSc
-  DAMp --> MSp
-  SAEc -- request --> CK
-  CK -- approval --> DAMc
+  APNs --> DAMi
+  APNs --> DAMm
+  DAMi --> MSi
+  DAMm --> MSm
+  SAEi -- request --> CK
+  SAEm -- request --> CK
+  CK -- decision --> DAMi
+  CK -- decision --> DAMm
 ```
 
-## Ask-For-More-Time tradeoff (hybrid)
-Each `Window` declares `enforcement: .systemDowntimeMirror | .managedSettingsShield`.
-
-- `.systemDowntimeMirror`: the user configured Apple's system Downtime to match this window during onboarding. We do NOT shield; we just track that the OS is enforcing it. Native AFMT works unchanged. Used for the dominant block (e.g. overnight).
-- `.managedSettingsShield`: our DeviceActivityMonitorExtension writes a ManagedSettingsStore shield over the chosen apps for the window. AFMT is reimplemented in-app via a `ShieldActionExtension` "Request more time" button → CloudKit → APNs to parent → parent approves → child store clears for N minutes via a one-shot schedule.
-
-The user picks per window which behavior they want, with the expectation that exactly one window per day uses `.systemDowntimeMirror`.
-
 ## Data model
-- `Schedule`: per-account weekly template, list of `Window`s, version, updatedAt.
-- `Window`: `id: UUID`, `weekdays: Weekdays`, `start: TimeOfDay`, `end: TimeOfDay`, `enforcement: Enforcement`, `groupId: WindowGroupID`, `allowRequests: Bool`.
-- `Override`: append-only. `id`, `accountId`, `date` (in account tz), `action: skipWindow(id) | extendWindow(id, minutes) | addBlock(start,end) | disableAllForDay`, `createdBy`, `createdAt`, `expiresAt = next local midnight`.
-- `Account`: `id`, `role: .self | .child`, `appleIDHash`, `deviceList`, `tokenBundleRef`.
-- `TokenBundle`: per-device opaque token blobs (since tokens are device-scoped) keyed by `deviceId`, indexed by stable `WindowGroupID` so the same logical "Social apps" group resolves to different opaque tokens on each device.
-- `CDExtensionRequest`: child-originated request for more time on a shielded window.
+- **Schedule**: per-child weekly template. `Window`s, `version`, `updatedAt`.
+- **Window**: `id`, `weekdays`, `start`, `end`, `groupId: WindowGroupID`, `allowRequests`. No enforcement enum — every window is a shield.
+- **Override**: append-only. `id`, `childId`, `deviceId?`, `kind`, `createdBy`, `createdAt`, `expiresAt`. `kind ∈ { reject, extend(minutes), restOfDay, skipWindow(id), addBlock(start,end), disableAllForDay }`.
+- **Child**: `id`, `displayName`, `timezone`, `devices: [Device]`.
+- **Device**: `id`, `platform ∈ { iPadOS, macOS, iOS }`, `osVersion`, `capabilities: Set<Capability>`.
+- **TokenBundle**: per-device opaque token blobs keyed by `deviceId`, indexed by stable `WindowGroupID`. Tokens stay on the device that picked them; other devices see only the group reference.
+- **CDExtensionRequest**: `id`, `deviceId`, `windowId`, `appTokenRef`, `createdAt`, `state ∈ { pending, decided }`, `decisionRef?`.
+
+**Conflict resolution**: Overrides are append-only (delete + insert, never edit). Schedule/Window use `updatedAt` LWW with the **Mac daemon as canonical writer** — other devices' edits are proposals the daemon reconciles within seconds before broadcasting, sidestepping the clock-skew failure CRITIQUE_3 raised.
 
 ## Sync strategy (CloudKit)
-- Parent's iCloud private DB, custom zone `ScheduleZone`, CKShare invitation accepted by each child during pairing so child's own iCloud account can read/write the shared records.
-- Records: `CDSchedule`, `CDWindow`, `CDOverride`, `CDAccount`, `CDDeviceRegistration`, `CDExtensionRequest`. Per-type `CKQuerySubscription`s emit silent pushes.
-- Each device runs an `actor SyncCoordinator` that materializes CK records into a local SQLite (GRDB) cache inside the App Group container, then republishes to the enforcement layer.
-- Conflict resolution: last-writer-wins on Schedule/Window using `updatedAt`. Overrides are append-only (delete + insert, never edit).
-- Tokens are NOT synced as values, only references — each device populates its own `TokenBundle` via `FamilyActivityPicker` once.
+- Parent iCloud private DB, custom zone `ScheduleZone`, `CKShare` to each child Apple ID.
+- Runs against **Development CloudKit** (RESEARCH §9). Schema is mutable forever; no "Deploy to Production" step ever.
+- Records: `CDSchedule`, `CDWindow`, `CDOverride`, `CDChild`, `CDDevice`, `CDExtensionRequest`, `CDTokenBundleRef` (no actual tokens). Per-type `CKQuerySubscription` for silent pushes.
+- Each device runs an `actor SyncCoordinator` that materializes CK records into a local GRDB cache in the App Group container and feeds the enforcement layer.
+- Onboarding order: **QR-bootstrap handshake first** (exchanges CK zone identifiers + record-encryption keys over local transport), CKShare second. Known under-13 CKShare flakiness thus never blocks first-run.
 
-## Enforcement on each device
-- **iOS (parent or child)**: `DeviceActivityCenter` registers schedules `<windowId>-<weekday>` (seven per window). Inside the `DeviceActivityMonitorExtension`, `intervalDidStart` reads the local cache for current overrides via `OverrideEngine.effectiveWindows(for:)`, decides whether to apply the `ManagedSettingsStore` shield, and writes it. `intervalDidEnd` clears that store. If today's weekday isn't in the bitmap, the extension early-returns.
-- **Recovery anchor**: a daily 00:01 schedule re-registers all monitors, recovering from any missed callbacks.
-- **macOS (always-on)**: same multiplatform target. Additionally hosts a `SchedulerDaemon` LaunchAgent that (a) writes authoritative schedule changes to CloudKit, (b) prunes expired overrides at local midnight, (c) acts as the always-online APNs receiver to relay extension-request approvals to children whose iOS background delivery is flaky.
-- The Mac is the *preferred* authoritative writer; any device can author. If the parent's iPhone is off, the Mac picks up the slack and child devices receive updates via CloudKit push.
+## Enforcement per device
+The prior draft registered seven schedules per window per device plus per-window anchors, multiplying the race surface and pushing against the undocumented DAM ceiling for any non-trivial plan. Revised: **one schedule per window**, with weekday and override resolution deferred into `intervalDidStart` via `OverrideEngine.effectiveWindows(for: now, device:)`.
 
-## Ask-For-More-Time preserved (hybrid flow)
-- Primary nightly Downtime: native, untouched, native AFMT works.
-- Secondary windows: child taps shielded app → `ShieldActionExtension` "Request Time" button → writes `CDExtensionRequest` to CloudKit → parent receives a custom `UNNotification` with Approve/Deny actions → on Approve, parent device writes `CDOverride(extendWindow, +15m)` → child's monitor wakes via CK push, clears the shield for the granted duration via a one-shot `DeviceActivitySchedule`. Round-trip target <10s when both devices online.
+- **iPadOS 26 (child iPad)**: `DeviceActivityCenter` registers one schedule per window. `intervalDidStart` checks `weekday ∈ window.weekdays` against the local cache, applies the `ManagedSettingsStore` shield, and schedules a one-shot tail for any active extend/restOfDay override. `intervalDidEnd` clears the store. A **single** 00:01 daily anchor re-registers monitors, recovering from missed callbacks. The editor enforces non-overlapping windows (≥1s gap) so adjacent `intervalDidEnd`/`intervalDidStart` pairs cannot race a shared store (CRITIQUE_3 §5).
+- **macOS 13 Ventura (child iMac 2017)**: same multiplatform target, same extension code. **Known parity gaps**: some `ManagedSettings` keys are no-ops on macOS 13; the `Capability` matrix on each `Device` record disables unsupported shield types in the editor for that device. `ShieldAction` on macOS is functional on 13+ but flakier — degraded fallback: the sibling app polls CloudKit every 60s while a shield is active so requests aren't lost to extension misfires. A lightweight LaunchAgent pings the DAM extension on wake from sleep, since macOS historically drops DAM callbacks across sleep cycles. The iMac is stuck on Ventura (hardware can't run 14+); whatever Apple has fixed since is unavailable here, so treat parity gaps as permanent.
+- **Parent Mac (always-on)**: hosts the `SchedulerDaemon` as a **LaunchAgent** (NOT LaunchDaemon — FamilyControls auth requires a user-app context, so the daemon runs in the logged-in session and never holds FC auth itself; FC-gated operations are XPC-bounced to the Controller app). Responsibilities: canonical schedule writer, midnight override pruning, always-online fallback receiver for `CDExtensionRequest`, presenter of action-bearing notifications in the macOS session.
+- **Parent iPhone**: same multiplatform app, receives and can act on extension requests. Either parent device may decide; the Mac daemon arbitrates persistence order.
 
 ## Module layout
 ```
 ScreenTimeScheduler/
   App/
-    iOSApp.swift, macOSApp.swift, AppDelegate+Push.swift
+    iOSApp.swift, iPadApp.swift, macOSApp.swift, AppDelegate+Push.swift
   Core/
-    Models/         Schedule, Window, Override, Account, TokenBundle
+    Models/         Schedule, Window, Override, Child, Device, TokenBundle
     Persistence/    LocalStore (GRDB), AppGroupPaths
-    Sync/           CloudKitSchema, SyncCoordinator, SubscriptionManager, ConflictResolver
-    Scheduling/     ScheduleCompiler (Schedule -> [DeviceActivitySchedule]), OverrideEngine
+    Sync/           CloudKitSchema, SyncCoordinator, SubscriptionManager, CanonicalWriter
+    Scheduling/     ScheduleCompiler, OverrideEngine, CapabilityMatrix
     Enforcement/    ShieldController, TokenResolver
-    Requests/       ExtensionRequestService, PushRouter
+    Requests/       ExtensionRequestOutbox, NotificationActionHandler
   Extensions/
-    DeviceActivityMonitorExtension/   Monitor.swift
-    ShieldConfigurationExtension/     ShieldConfig.swift
-    ShieldActionExtension/            ShieldAction.swift
+    DeviceActivityMonitorExtension/
+    ShieldConfigurationExtension/
+    ShieldActionExtension/
   UI/
-    Onboarding/   FamilyControlsAuth, SystemDowntimeSetupGuide
+    Onboarding/   FamilyControlsAuth, QRPairingView, DeviceCapabilityCheck
     Schedules/    ScheduleEditorView, WindowEditorView, FamilyActivityPickerHost
     Overrides/    TodayOverrideView
-    Family/       ChildAccountListView, ChildPairingView
+    Family/       ChildListView, DeviceListView
   macOSDaemon/
-    SchedulerDaemon.swift (LaunchAgent target)
+    SchedulerDaemon.swift (LaunchAgent), FCHelperXPC (→ Controller app)
   Shared/
-    Logging.swift, FeatureFlags.swift
+    Logging.swift
 ```
 
 ### Key types
-- `struct Window { let id: UUID; var weekdays: Weekdays; var start: TimeOfDay; var end: TimeOfDay; var enforcement: Enforcement; var groupId: WindowGroupID; var allowRequests: Bool }`
-- `enum Enforcement { case systemDowntimeMirror; case managedSettingsShield }`
-- `actor SyncCoordinator { func start(); func upsert<T: CKSyncable>(_ value: T); func handleRemoteNotification(_ payload: [AnyHashable: Any]) }`
-- `struct OverrideEngine { func effectiveWindows(for date: Date, account: Account) -> [ResolvedWindow] }`
+- `struct Window { let id: UUID; var weekdays: Weekdays; var start: TimeOfDay; var end: TimeOfDay; var groupId: WindowGroupID; var allowRequests: Bool }`
+- `enum OverrideKind { case reject; case extend(Int); case restOfDay; case skipWindow(UUID); case addBlock(TimeOfDay, TimeOfDay); case disableAllForDay }`
+- `struct Device { let id: UUID; let platform: Platform; let osVersion: String; var capabilities: Set<Capability> }`
+- `actor SyncCoordinator { func start(); func upsert<T: CKSyncable>(_ value: T); func handleRemoteNotification(_: [AnyHashable: Any]) }`
+- `struct OverrideEngine { func effectiveWindows(for date: Date, device: Device) -> [ResolvedWindow] }`
 - `final class ShieldController { func apply(_ resolved: ResolvedWindow); func clear(_ id: UUID) }`
 
 ## Failure modes
-1. **CloudKit propagation lag** → child stays shielded longer than intended after Approve. Mitigation: silent push + foreground polling fallback every 60s while a pending request exists; Mac daemon nudges via high-priority `CKModifyRecordsOperation`.
-2. **DeviceActivityMonitor missed callback** → shield never applies. Mitigation: redundant 7-day schedules + daily 00:01 anchor that recomputes and re-registers all monitors.
-3. **Token drift after iOS upgrade** → tokens may invalidate. Mitigation: `TokenResolver` verifies tokens against installed app inventory at launch; surfaces re-pick UI per group.
-4. **Parent's Mac AND iPhone offline** → no authoritative writer for new edits. Mitigation: any device can author; LWW on `updatedAt` resolves later drift.
-5. **Child uninstalls app** → blocked by Family Controls `.child` (requires guardian passcode to remove).
-6. **iCloud account change** on a device → CK zone resets; re-onboarding required.
-7. **macOS API gaps** → some ManagedSettings keys are no-ops on macOS; per-key support matrix disables unsupported windows on Mac targets.
-8. **User manually edits system Downtime** → model drifts vs `.systemDowntimeMirror` window. Periodic reconciliation reminder.
+1. **CK propagation lag** → child stays shielded after approve. Silent push + 60s foreground polling fallback while a request is pending; daemon nudges via high-priority `CKModifyRecordsOperation`.
+2. **DAM missed callback** → shield never applies. Single 00:01 daily anchor re-registers monitors; macOS LaunchAgent pings DAM on wake.
+3. **Token drift after iOS upgrade** → tokens invalidate. `TokenResolver` verifies tokens against installed inventory at launch and surfaces re-pick UI per group. Pain on the dev-entitlement path is low: Xcode is on-hand.
+4. **Parent Mac AND iPhone offline** → no canonical writer; children enforce from local cache. New edits queue on the issuing device and flush on reconnect.
+5. **Child uninstalls app** → blocked by FamilyControls `.child` (guardian passcode required).
+6. **iCloud account change** on a device → CK zone resets; re-pair via QR.
+7. **macOS API gaps** → `CapabilityMatrix` disables shield types the device can't enforce; editor greys them out per-device.
+8. **User's own system Downtime overlapping ours** → orthogonal stores that don't arbitrate. Onboarding asks the user to disable system Downtime on enforced devices. No hidden mirror handshake.
+9. **Adjacent-window boundary race** → editor enforces ≥1s gaps so two schedules never transition on the same store simultaneously.
+10. **ShieldActionExtension killed mid-write** → extension writes to a local outbox first; main app flushes on next launch or DAM wake.
 
-## Required Apple entitlements
-- `com.apple.developer.family-controls` (app + all 3 extensions, both platforms)
+## Required Apple entitlements (development path)
+- `com.apple.developer.family-controls` — **development** variant, auto-enabled in Xcode for paid-program members with no application (RESEARCH §9). App + all 3 extensions on both platforms.
 - `com.apple.developer.deviceactivity`
-- `com.apple.developer.icloud-services` = CloudKit, plus container identifier
-- `aps-environment` = production
-- App Group `group.com.example.sts` (shared between app and extensions; both platforms)
+- `com.apple.developer.icloud-services` = CloudKit (Development environment)
+- `aps-environment` = development
+- App Group `group.com.example.sts`
 - Background modes: remote-notification, processing
-- Hardened runtime + LaunchAgent plist for the macOS daemon
+- Hardened runtime + LaunchAgent plist for the Mac daemon
+
+No distribution profile, no TestFlight, no App Store review. Annual per-device reinstall via Xcode (~10 min/device).
 
 ## Open risks
-1. Apple entitlement review delay (weeks).
-2. Reviewer tolerance for reimplementing a request-more-time flow that mimics system UI.
-3. macOS DeviceActivity reliability when the Mac sleeps; may need `caffeinate`/`pmset` hints.
-4. Token portability UX cost: user must visit `FamilyActivityPicker` on each device once.
-5. CKShare flow with child Apple IDs has been tightened by Apple; needs validation.
-6. The hybrid model relies on a one-time manual system Downtime setup; drift requires reconciliation.
+1. **CKShare-to-child** flakiness. Mitigated by QR-first onboarding.
+2. **macOS 13 Ventura API parity**. iMac 2017 can't run 14+, so anything Apple has fixed since Ventura is unavailable on that device. `CapabilityMatrix` + polling fallback is the extent of the mitigation.
+3. **macOS DAM reliability across sleep**. Wake-nudge LaunchAgent is a patch, not a fix.
+4. **Token portability UX**: `FamilyActivityPicker` per device per group, repeated after iOS upgrades invalidate tokens.
+5. **Developer program lapse**: $99/yr renewal. If it lapses, provisioning profiles revoke on next device check-in.
+6. **iMac 2017 security EOL**: when Apple drops Ventura security updates, the Mac child target becomes security-obsolete. Household problem, not a plan defect, but worth flagging.
