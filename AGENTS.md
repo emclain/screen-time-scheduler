@@ -49,6 +49,15 @@ is healthy.
 > **Note:** The Dolt database is runtime state (not in git). `setup.sh` rebuilds
 > it from `.beads/issues.jsonl` on every fresh checkout or container.
 
+## Git Policy
+
+**Never rebase.** Always use merge to integrate changes between branches. Rebase rewrites history and creates problems when branches are shared.
+
+```bash
+git fetch origin
+git merge origin/<branch>   # not git rebase
+```
+
 ## Issue Workflow
 
 Each agent works on **exactly one issue**, then stops.
