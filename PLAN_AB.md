@@ -155,7 +155,7 @@ The handler diffs desired vs. current registration and no-ops when they match.
 ### Platform-specific notes
 
 - **iPadOS 26 (child iPad)**: full modern API surface. Primary enforcement target.
-- **macOS 13 Ventura (child iMac)**: first-generation Mac APIs. Known parity gaps handled by `CapabilityMatrix` (disables unsupported shield types in the editor). Fallback: the app polls CloudKit every 60s while a shield is active. Wake-from-sleep LaunchAgent pings DAM. Treat gaps as permanent (hardware cannot run macOS 14+).
+- **macOS 13 Ventura (child iMac)**: first-generation Mac APIs. Known parity gaps handled by `CapabilityMatrix` (disables unsupported shield types in the editor). `ShieldAction` on macOS 13 is flakier than on iOS — it may fail to wake and process an AFMT override response, leaving the child shielded after the parent approved. Fallback: when the app is running, it polls CloudKit every 60s while a shield is active so override responses aren't lost to extension misfires. This means the app must be running on the child iMac for reliable AFMT (see Bootstrap for open-at-login setup). Core shield-on/shield-off enforcement still works via DAM without the app running. Wake-from-sleep LaunchAgent pings DAM to re-register schedules after sleep. Treat gaps as permanent (hardware cannot run macOS 14+).
 - **Parent Mac (optional)**: LaunchAgent daemon for convenience (pruning, validation, notifications). FC-gated operations go via XPC to the main app, which holds `.individual` auth. Daemon responsibilities are not correctness-critical.
 - **Parent iPhone**: regular CloudKit client. Optional self-target via `.individual` FC auth. The editor rejects adding the app's own bundle ID to any token group (prevents self-lockout).
 
@@ -213,6 +213,52 @@ ScreenTimeScheduler/
 - Hardened runtime + LaunchAgent plist for Mac daemon
 
 No distribution profile, no TestFlight, no App Store review. Annual per-device reinstall via Xcode (~10 min/device).
+
+## Bootstrap / First Run
+
+Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to the developer account. On first launch, the app walks through onboarding to establish its role, authorize FamilyControls, pair with the family, pick apps to shield, and register DAM schedules. Per-device steps:
+
+### Parent iPhone
+
+1. Install from Xcode.
+2. App launches onboarding: request FamilyControls `.individual` authorization (single in-app prompt, user approves).
+3. Sign in to iCloud (if not already). App creates `ScheduleZone` in CloudKit private DB.
+4. Optionally configure a self-shielding Subject. If so, present `FamilyActivityPicker` to select app groups, then register DAM schedules.
+5. Register for `CKQuerySubscription` silent pushes (AFMT requests from children).
+6. App requests notification permission for AFMT action notifications.
+
+### Parent Mac (optional)
+
+1. Install app from Xcode. Install `SchedulerDaemon` LaunchAgent plist to `~/Library/LaunchAgents/`.
+2. App launches onboarding: request FamilyControls `.individual` authorization.
+3. LaunchAgent starts the daemon at login. Daemon connects to the app via XPC for any FC-gated operations.
+4. Same CloudKit setup as parent iPhone (shares the same iCloud account and `ScheduleZone`).
+
+### Child iPad (iPadOS 26)
+
+1. Install from Xcode via USB/Wi-Fi.
+2. App launches onboarding: request FamilyControls `.child` authorization. This triggers the standard parent-approval flow — a guardian must enter the Screen Time passcode on the child's device (or approve remotely).
+3. QR-bootstrap handshake: parent scans a QR code displayed on the child device (or vice versa) to exchange CK zone IDs and encryption keys. Then accept `CKShare`.
+4. Present `FamilyActivityPicker(.child)` on the child device to capture token sets per window group. Tokens are device-scoped and stay local.
+5. App registers DAM schedules (one per window) and the daily 00:01--12:00 recovery anchor.
+6. Register for `CKQuerySubscription` silent pushes (override responses from parents).
+7. Onboarding prompts the user to disable Apple's built-in Screen Time Downtime on this device to avoid interference.
+
+### Child iMac (macOS 13 Ventura)
+
+1. Create a non-privileged standard macOS user account for the child. The child logs in to this account with their own Apple ID.
+2. Install app from Xcode in the child's user session.
+3. App launches onboarding: request FamilyControls `.individual` authorization (not `.child` — on macOS, the child's own Apple ID signs in and the app shields that user session with `.individual`).
+4. QR-bootstrap handshake and `CKShare` acceptance, same as child iPad.
+5. Present `FamilyActivityPicker` to capture token sets.
+6. App registers DAM schedules and the daily recovery anchor.
+7. **Open at login**: the app registers itself as a login item (`SMAppService.register`) so it launches automatically when the child logs in. This is required for the 60s CloudKit polling fallback that compensates for macOS 13's flaky `ShieldAction` (see Platform-specific notes).
+8. Install wake-from-sleep LaunchAgent plist to `~/Library/LaunchAgents/` in the child's session. This pings DAM on wake to re-register schedules that may have been dropped during sleep.
+9. Restrict the non-privileged account: use macOS Parental Controls / Screen Time account settings to prevent the child from modifying System Settings, removing login items, or deleting the app. Admin credentials required for these changes.
+
+### Annual maintenance
+
+Development provisioning profiles expire after 12 months. Rebuild and reinstall from Xcode on each device (~10 min/device). Set a calendar reminder. The app continues running after expiry until iOS/macOS revalidates the profile, but don't rely on the grace period.
 
 ## Open Risks
 
