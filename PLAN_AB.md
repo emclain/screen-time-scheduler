@@ -190,7 +190,9 @@ ScreenTimeScheduler/
 
 1. **CK propagation lag**: silent push + 60s foreground polling fallback while a request is pending.
 2. **DAM missed callback**: idempotent re-registration on multiple triggers (see Recovery above).
-3. **Token drift after OS upgrade**: `TokenResolver` verifies tokens at launch, surfaces re-pick UI per group.
+3. **Token drift after OS upgrade**: `TokenResolver` verifies tokens against installed app inventory at launch. If tokens are stale, behavior depends on the subject kind:
+   - **Managed child**: the app switches to a blanket category shield (all apps blocked except the enforcement app itself) for the affected window groups, erring on enforcement rather than failing open. The app surfaces a "tokens need refresh" status visible to the child but not actionable by them. The **parent** must re-pick tokens — either by running `FamilyActivityPicker(.child)` on the child's device directly (handed the device) or from their own device via Apple's guardian-context picker flow (iOS 16+, returns tokens valid on the child device). A silent push notifies parent devices that re-pick is needed.
+   - **Self subject**: the app surfaces a re-pick UI directly; the user runs `FamilyActivityPicker` themselves.
 4. **All parent devices offline**: children enforce from local cache. Edits queue and flush on reconnect.
 5. **Child uninstalls app**: blocked by `.child` FC auth (requires guardian passcode). On macOS, admin credentials required.
 6. **iCloud account change**: CK zone resets; re-pair via QR.
@@ -265,7 +267,7 @@ Development provisioning profiles expire after 12 months. Rebuild and reinstall 
 1. **CKShare-to-child flakiness** -- mitigated by QR-first onboarding.
 2. **macOS 13 Ventura API parity** -- iMac stuck on Ventura; treat gaps as permanent.
 3. **macOS DAM reliability across sleep** -- wake-nudge LaunchAgent is a patch, not a fix.
-4. **Token portability UX** -- FamilyActivityPicker per device per group, repeated after OS upgrades.
+4. **Token portability UX** -- FamilyActivityPicker per device per group, repeated after OS upgrades. Managed child devices fall back to blanket category shields until a parent re-picks tokens (see Failure Modes #3). Category token stability across upgrades is unverified — if categories also invalidate, the blanket shield would need to use a hard-coded "all categories" set rather than stored tokens.
 5. **Developer program lapse** -- $99/yr renewal; lapsing revokes provisioning profiles.
 6. **iMac 2017 security EOL** -- household problem, not a plan defect.
 7. **Apple API changes at WWDC** -- custom AFMT is the most framework-coupled piece. Dev path means no App Review risk, but API removal would require code changes.
