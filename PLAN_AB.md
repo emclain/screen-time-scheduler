@@ -122,7 +122,7 @@ Both topologies use CloudKit for all transport. The choice is a deployment knob,
 5. Parent taps an action, writing an `Override` to CloudKit.
 6. Child's DAM extension wakes via push, clears the shield for the granted duration.
 
-**Self-subject short-circuit**: for `Subject(kind: .self)`, the ShieldActionExtension opens a local sheet instead of posting a remote request. The user approves themselves. Steps 3--5 are skipped.
+**Self-subject short-circuit**: for `Subject(kind: .self)`, the `ShieldActionExtension` returns `.defer`, which opens the main app. The app detects the pending self-request and presents an approval sheet (**Deny / +15m / +1h / Rest-of-day**). The user approves themselves; the app writes the `Override` directly to the local GRDB cache (mirrored to CloudKit for multi-device sync). Steps 3--5 are skipped.
 
 Round-trip target: <10s with both ends online. The parent Mac daemon (if present) is an always-online relay when the parent iPhone is asleep.
 
