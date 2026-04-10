@@ -90,12 +90,18 @@ Parent iPhone          Parent Mac (optional)        Child iPad       Child iMac
                    CKQuerySubscription pushes
 ```
 
-All devices run the same app and are peers writing to CloudKit. The parent Mac, if present, also runs a LaunchAgent daemon for convenience (midnight pruning, Mac-side notifications, centralized validation) but is **not** the source of truth. CloudKit is.
+All devices run the same app and are peers writing to CloudKit. The parent Mac, if present, also runs a LaunchAgent daemon for three convenience tasks (none are correctness-critical):
+
+- **Midnight override pruning**: Overrides are append-only CK records with `expiresAt` timestamps. A deterministic midnight timer deletes expired overrides so the log doesn't grow unbounded. Without the daemon, each device's `OverrideEngine` silently skips expired overrides when consulted, but the CK records linger until a device lazily cleans them up.
+- **Centralized business-rule validation**: The daemon re-validates schedule writes (non-overlapping windows, valid time ranges) as a second check after CloudKit sync. Every device already validates locally before writing, so this is belt-and-suspenders — it catches edge cases where two devices write conflicting changes that each passed local validation independently.
+- **Mac-side AFMT notifications**: Action-bearing `UNNotification`s (Deny / +15m / +1h / Rest-of-day) for child extension requests, presented on the parent Mac. Without the daemon, the parent iPhone is the only AFMT notification surface.
+
+The daemon is **not** the source of truth. CloudKit is.
 
 ### Two topologies
 
-- **(a) Separate parent Mac present**: hosts an optional daemon LaunchAgent for convenience features. The main app holds FC auth; the daemon reaches it via XPC if the parent wants self-shielding on that Mac.
-- **(b) No parent Mac**: the parent iPhone is the sole parent device. No daemon, no XPC. Override pruning falls back to lazy per-device cleanup.
+- **(a) Separate parent Mac present**: hosts the daemon LaunchAgent for the three convenience tasks above. The main app holds FC auth; the daemon reaches it via XPC if the parent wants self-shielding on that Mac.
+- **(b) No parent Mac**: the parent iPhone is the sole parent device. No daemon, no XPC. Override pruning falls back to lazy per-device cleanup; validation is per-client only; AFMT notifications go only to the iPhone.
 
 Both topologies use CloudKit for all transport. The choice is a deployment knob, not a code branch.
 
