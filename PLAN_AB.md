@@ -70,24 +70,31 @@ The unit of shielding is a **Subject** -- an entity whose apps are shielded by s
 
 ## Architecture
 
+**One app, many roles.** There is no separate "management app" and "child app." One app serves both roles -- schedule management and enforcement target. What differs per device is *runtime configuration*: which FamilyControls authorization it holds (`.individual` or `.child`) and which roles are active (manager, enforcer, or both). This is not just a design preference; Apple requires the same bundle ID on the parent device (where `FamilyActivityPicker(.child)` selects apps) and the child device (where shields take effect). Separate apps with different bundle IDs would break token transfer.
+
+The Xcode project has separate platform targets (iOS/iPadOS, macOS) sharing a common Swift core. The diagram annotations below describe each device's runtime role, not a distinct application.
+
+The only separate process is the optional macOS LaunchAgent daemon, which handles convenience tasks (pruning, notifications) and uses XPC to the main app for any FC-gated operation.
+
 ```
 Parent iPhone          Parent Mac (optional)        Child iPad       Child iMac
- SwiftUI App            SwiftUI Controller App       App (.child)     App (.child)
- (manager+enforcer)     (manager+opt enforcer)
+ App                    App                          App              App
+ FC .individual         FC .individual (via XPC)     FC .child        FC .child
+ [manager+enforcer]     [manager+opt enforcer]       [enforcer only]  [enforcer only]
        |                  |      |                      |                |
-       |                  |   XPC to GUI Helper         |                |
-       |                  |   (FC .individual)          |                |
+       |                  |   XPC to main app           |                |
+       |                  |   (LaunchAgent daemon)      |                |
        |                  |                             |                |
        +---------- CloudKit Dev (private DB) ----------+----------------+
                    CKShare per child Apple ID
                    CKQuerySubscription pushes
 ```
 
-All devices are peers writing to CloudKit. The parent Mac, if present, runs a LaunchAgent daemon for convenience (midnight pruning, Mac-side notifications, centralized validation) but is **not** the source of truth. CloudKit is.
+All devices run the same app and are peers writing to CloudKit. The parent Mac, if present, also runs a LaunchAgent daemon for convenience (midnight pruning, Mac-side notifications, centralized validation) but is **not** the source of truth. CloudKit is.
 
 ### Two topologies
 
-- **(a) Separate parent Mac present**: hosts an optional daemon LaunchAgent for convenience features. The GUI helper app holds FC auth via XPC if the parent wants self-shielding on that Mac.
+- **(a) Separate parent Mac present**: hosts an optional daemon LaunchAgent for convenience features. The main app holds FC auth; the daemon reaches it via XPC if the parent wants self-shielding on that Mac.
 - **(b) No parent Mac**: the parent iPhone is the sole parent device. No daemon, no XPC. Override pruning falls back to lazy per-device cleanup.
 
 Both topologies use CloudKit for all transport. The choice is a deployment knob, not a code branch.
@@ -142,9 +149,9 @@ The handler diffs desired vs. current registration and no-ops when they match.
 ### Platform-specific notes
 
 - **iPadOS 26 (child iPad)**: full modern API surface. Primary enforcement target.
-- **macOS 13 Ventura (child iMac)**: first-generation Mac APIs. Known parity gaps handled by `CapabilityMatrix` (disables unsupported shield types in the editor). Fallback: sibling app polls CloudKit every 60s while a shield is active. Wake-from-sleep LaunchAgent pings DAM. Treat gaps as permanent (hardware cannot run macOS 14+).
-- **Parent Mac (optional)**: LaunchAgent daemon for convenience (pruning, validation, notifications). FC-gated operations go via XPC to a GUI helper app that holds `.individual` auth. Daemon responsibilities are not correctness-critical.
-- **Parent iPhone**: regular CloudKit client. Optional self-target via `.individual` FC auth. The editor rejects adding the sibling app's own bundle ID to any token group (prevents self-lockout).
+- **macOS 13 Ventura (child iMac)**: first-generation Mac APIs. Known parity gaps handled by `CapabilityMatrix` (disables unsupported shield types in the editor). Fallback: the app polls CloudKit every 60s while a shield is active. Wake-from-sleep LaunchAgent pings DAM. Treat gaps as permanent (hardware cannot run macOS 14+).
+- **Parent Mac (optional)**: LaunchAgent daemon for convenience (pruning, validation, notifications). FC-gated operations go via XPC to the main app, which holds `.individual` auth. Daemon responsibilities are not correctness-critical.
+- **Parent iPhone**: regular CloudKit client. Optional self-target via `.individual` FC auth. The editor rejects adding the app's own bundle ID to any token group (prevents self-lockout).
 
 ## Module Layout
 
@@ -168,7 +175,7 @@ ScreenTimeScheduler/
     Overrides/      TodayOverrideView
     Family/         SubjectListView, DeviceListView
   macOSDaemon/
-    SchedulerDaemon (LaunchAgent), FCHelperXPC (XPC to GUI helper)
+    SchedulerDaemon (LaunchAgent), FCHelperXPC (XPC to main app)
   Shared/
     Logging
 ```
@@ -186,7 +193,7 @@ ScreenTimeScheduler/
 9. **Adjacent-window boundary race**: editor enforces >=1s gaps.
 10. **ShieldAction killed mid-write**: local outbox first; main app flushes on next launch.
 11. **Mac daemon down**: pruning/validation/notifications degrade gracefully. Not correctness-critical.
-12. **Sibling app shielded by mistake**: editor rejects the sibling app's bundle ID; ShieldActionExtension hard-codes an exemption.
+12. **App shielded by itself**: editor rejects the app's own bundle ID; ShieldActionExtension hard-codes an exemption.
 13. **Self-subject bypass**: `.individual` auth revocable from Settings at any time. Intentional -- focus tool, not parental control.
 
 ## Required Entitlements
