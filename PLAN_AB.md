@@ -128,7 +128,7 @@ Round-trip target: <10s with both ends online. The parent Mac daemon (if present
 
 ## Enforcement Per Device
 
-One DAM schedule per window. `intervalDidStart` checks the weekday, applies the ManagedSettingsStore shield, schedules a one-shot tail for any active override. `intervalDidEnd` clears the store. The editor enforces non-overlapping windows (>=1s gap) to prevent boundary races.
+One DAM schedule per window. `intervalDidStart` checks the weekday and applies the ManagedSettingsStore shield. `intervalDidEnd` clears the store. When an override is granted (via AFMT or pre-existing when the window starts), the shield is cleared and a non-repeating post-override schedule is registered from the override's expiry to the window's end, re-applying the shield for the remainder. The editor enforces non-overlapping windows (>=1s gap) to prevent boundary races.
 
 **Recovery from missed callbacks**: idempotent re-registration triggered from:
 - Daily 00:01--12:00 anchor schedule (wide window survives overnight-off devices)
