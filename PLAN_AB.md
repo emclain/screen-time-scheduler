@@ -21,6 +21,7 @@
   - [Child iPad (iPadOS 26)](#child-ipad-ipados-26)
   - [Child iMac (macOS 13 Ventura)](#child-imac-macos-13-ventura)
   - [Annual maintenance](#annual-maintenance)
+- [Logging](#logging)
 - [Failure Modes](#failure-modes)
 - [Open Risks](#open-risks)
 
@@ -203,7 +204,8 @@ ScreenTimeScheduler/
 
 - `com.apple.developer.family-controls` (development variant)
 - `com.apple.developer.deviceactivity`
-- `com.apple.developer.icloud-services` = CloudKit (Development)
+- `com.apple.developer.icloud-services` = CloudKit (Development) + iCloud Documents (for the log file ubiquity container, see Logging)
+- `com.apple.developer.ubiquity-container-identifiers` = `iCloud.com.example.sts`
 - `aps-environment` = development
 - App Group `group.com.example.sts`
 - Background modes: remote-notification, processing
@@ -255,6 +257,46 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 ### Annual maintenance
 
 Development provisioning profiles expire after 12 months. Rebuild and reinstall from Xcode on each device (~10 min/device). Set a calendar reminder. The app continues running after expiry until iOS/macOS revalidates the profile, but don't rely on the grace period.
+
+## Logging
+
+When Screen Time fails, the failure is usually silent -- a shield doesn't apply, an AFMT response doesn't arrive, a DAM callback never fires. The logging strategy is designed to reconstruct any coordination failure after the fact from a single timeline.
+
+**Two sinks, written by every process** (main app, DAM / ShieldConfig / ShieldAction extensions, macOS daemon):
+
+1. **OSLog** (always-on, local). Unified logging under subsystem `com.example.sts` with per-module categories (`sync`, `shield`, `afmt`, `dam`, `auth`, `daemon`). Viewable in Console.app on a tethered Mac or via `log show --predicate 'subsystem == "com.example.sts"'`. Bounded by the OS ring buffer, no quota management. Ground truth for debugging a device that's physically in hand.
+2. **Append-only NDJSON log file** (durable, remotely readable). Every process also appends one event per line to a per-device log file, rotating daily, capped at ~30 days on disk. The file lives in the app's iCloud Drive **ubiquity container**, so writes are plain `FileManager` calls with no cloud SDK involvement -- iCloud Drive handles sync. Extensions write to the same App Group path; the main app coordinates rotation and cleanup.
+
+Event schema: `ts` (ISO 8601 ms UTC), `dev` (device name), `role`, `cat` (category), `lvl` (`debug`/`info`/`warn`/`error`), `evt` (stable event name), `ctx` (free-form JSON).
+
+```
+{"ts":"2026-04-11T15:32:17.812Z","dev":"child-ipad","role":"enforcer","cat":"afmt","lvl":"info","evt":"request_written","ctx":{"reqId":"...","windowId":"...","tokenHash":"..."}}
+```
+
+Line-oriented so `tail -f`, `grep`, and `jq` all work directly on the synced files -- no in-app viewer needed.
+
+**Two pools, by Apple ID boundary.** Ubiquity containers are scoped per Apple ID, so the parent Apple ID (parent iPhone, optional parent Mac) produces one iCloud Drive pool and the child Apple ID (child iPad, child iMac) produces another. Within a pool, every device's log file shows up in every other device's iCloud Drive automatically via ubiquity sync -- no extra code. Across pools, see below.
+
+**Merging pools for diagnosis**, two options in priority order:
+
+- **(preferred) Shared iCloud Drive folder.** iCloud Drive supports cross-Apple-ID folder sharing with "Can make changes" permission (iOS 13.4+ / macOS 10.15.4+). At bootstrap the parent creates a folder in their iCloud Drive and shares it with the child Apple ID. On first run each app prompts the user to pick the shared folder via `UIDocumentPickerViewController` / `NSOpenPanel`, stores a security-scoped bookmark in the App Group, and writes log files there *in addition to* its own ubiquity container. Both pools then land in one place, visible on any parent or child device via Files.app / Finder. Caveat: apps cannot automatically bind to an arbitrary iCloud Drive path; the user-initiated picker + bookmark dance is required, and cross-account iCloud Drive sharing has been historically uneven. Treat this as best-effort and let writes to the per-account ubiquity container always succeed regardless.
+- **(fallback) Two independent pools.** If shared-folder pathing is flaky or the user never completes the picker step, leave the pools separate. Diagnosing a cross-pool coordination failure then means inspecting one parent device and one child device rather than a single spot; acceptable given the household scale (one household, one child, two child devices).
+
+**What to log** (minimum set; every Failure Mode in the next section corresponds to at least one stable `warn` or `error` event name so searching the pool for that name yields a direct hit):
+
+- **Sync**: every `CKFetchRecordZoneChangesOperation` start/end with record count and change token; every push; every merge conflict; every dropped or re-created subscription.
+- **Schedule evaluation**: active window, which rule fired, expected shield state.
+- **Shield apply/remove**: `ManagedSettingsStore` writes with token counts before/after, plus any thrown error.
+- **AFMT**: request created, request pushed to CK, parent decision, override written, child-side apply.
+- **FamilyControls**: auth status changes, auth prompt shown, auth result, re-auth needed.
+- **DAM**: extension invocations with callback name and schedule id; re-registration diffs (desired vs. current).
+- **Daemon (macOS)**: launch, exit with exit code, XPC connection lifecycle.
+- **Bootstrap**: every numbered step from the Bootstrap section, pass/fail.
+- **Errors**: every caught exception or `Result.failure` with a stable error code and the function it was thrown from.
+
+**What NOT to log**: raw `ApplicationToken` / `ActivityCategoryToken` / `WebDomainToken` contents (log a stable hash and a count, never the bytes); Apple IDs, iCloud account identifiers, or user real names; full schedule payloads on every evaluation (log deltas and rule-fired events only).
+
+**Levels**: `debug` off by default and toggled from a hidden onboarding panel; `info` / `warn` / `error` always on.
 
 ## Failure Modes
 
