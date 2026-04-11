@@ -54,7 +54,7 @@ Management and enforcement are **orthogonal roles**. A device can hold either, b
 - **Manager**: reads/writes the shared schedule via CloudKit. No FamilyControls entitlement needed.
 - **Enforcer**: holds FamilyControls authorization, writes shields to its local ManagedSettingsStore via the DAM extension.
 
-The unit of shielding is a **Subject** -- an entity whose apps are shielded by some schedule:
+The unit of shielding is a **Subject** -- an entity whose apps are shielded by some schedule. **A Subject maps 1:1 to an Apple ID.** All of a Subject's devices are signed in to that Apple ID; the `Subject.devices` array lists them.
 
 - `Subject(kind: .self)` -- adult self-managing. Devices hold `.individual` FC auth. AFMT short-circuits locally.
 - `Subject(kind: .managed)` -- child. Devices hold `.child` FC auth. AFMT goes through CloudKit to parent devices.
