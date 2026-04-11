@@ -225,6 +225,7 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 4. Optionally configure a self-shielding Subject. If so, present `FamilyActivityPicker` to populate each token group, then register DAM schedules.
 5. Register for `CKQuerySubscription` silent pushes (AFMT requests from children).
 6. App requests notification permission for AFMT action notifications.
+7. **Shared logs folder setup** (optional, best-effort; see Logging). App creates a `ScreenTimeSchedulerLogs/` folder in the parent's iCloud Drive and opens the system share sheet pre-targeted at the child Apple ID with "Can make changes" permission. Parent confirms the share. App then presents `UIDocumentPickerViewController` pointed at the new folder, the user confirms, and the app stores a security-scoped bookmark in the App Group. Log writes start going to both the per-account ubiquity container and the shared folder. If the parent skips this step or the share invitation never reaches the child, logging silently falls back to two independent pools.
 
 ### Parent Mac (optional)
 
@@ -232,6 +233,7 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 2. App launches onboarding: request FamilyControls `.individual` authorization.
 3. LaunchAgent starts the daemon at login. Daemon connects to the app via XPC for any FC-gated operations.
 4. Same CloudKit setup as parent iPhone (shares the same iCloud account and `ScheduleZone`).
+5. **Shared logs folder** (optional, best-effort): `ScreenTimeSchedulerLogs/` already exists in the shared parent iCloud Drive from the parent iPhone step. App presents `NSOpenPanel` pointed at it, user confirms, bookmark is stored. Skipped automatically if the folder was never created on the iPhone.
 
 ### Child iPad (iPadOS 26)
 
@@ -242,6 +244,7 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 5. App registers DAM schedules (one per window) and the daily 00:01--12:00 recovery anchor.
 6. Register for `CKQuerySubscription` silent pushes (override responses from parents).
 7. Onboarding prompts the user to disable Apple's built-in Screen Time Downtime on this device to avoid interference.
+8. **Shared logs folder** (optional, best-effort): if the parent completed step 7 of Parent iPhone setup, an iCloud Drive share invitation for `ScreenTimeSchedulerLogs/` is waiting for the child Apple ID. Onboarding walks the user through accepting it in Files.app, then presents `UIDocumentPickerViewController` for the child to bind a security-scoped bookmark. Skipped automatically if no pending share is found.
 
 ### Child iMac (macOS 13 Ventura)
 
@@ -253,6 +256,7 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 6. App registers DAM schedules and the daily recovery anchor.
 7. **Background operation**: the app is built with `LSUIElement = true` (no dock icon, no app switcher entry, no application menu). A small menu bar item is the only visible surface, used by the parent for token re-pick and status. The child has no affordance to quit the app through normal UI.
 8. Install a LaunchAgent plist to `~/Library/LaunchAgents/` in the child's session with `RunAtLoad = true` and `KeepAlive = true`. This launches the app at login and automatically relaunches it if it exits. The same LaunchAgent also pings DAM on wake from sleep.
+9. **Shared logs folder** (optional, best-effort): same as child iPad step 8, but via `NSOpenPanel` and Finder. Requires the parent to have set up and shared `ScreenTimeSchedulerLogs/` during parent iPhone onboarding.
 
 ### Annual maintenance
 
@@ -279,7 +283,7 @@ Line-oriented so `tail -f`, `grep`, and `jq` all work directly on the synced fil
 
 **Merging pools for diagnosis**, two options in priority order:
 
-- **(preferred) Shared iCloud Drive folder.** iCloud Drive supports cross-Apple-ID folder sharing with "Can make changes" permission (iOS 13.4+ / macOS 10.15.4+). At bootstrap the parent creates a folder in their iCloud Drive and shares it with the child Apple ID. On first run each app prompts the user to pick the shared folder via `UIDocumentPickerViewController` / `NSOpenPanel`, stores a security-scoped bookmark in the App Group, and writes log files there *in addition to* its own ubiquity container. Both pools then land in one place, visible on any parent or child device via Files.app / Finder. Caveat: apps cannot automatically bind to an arbitrary iCloud Drive path; the user-initiated picker + bookmark dance is required, and cross-account iCloud Drive sharing has been historically uneven. Treat this as best-effort and let writes to the per-account ubiquity container always succeed regardless.
+- **(preferred) Shared iCloud Drive folder.** iCloud Drive supports cross-Apple-ID folder sharing with "Can make changes" permission (iOS 13.4+ / macOS 10.15.4+). A single `ScreenTimeSchedulerLogs/` folder, created by the parent and shared with the child Apple ID, can receive log files from every device in the household. Setup is an optional step in each device's Bootstrap flow (parent iPhone creates and shares; all other devices accept the share and bind a security-scoped bookmark via the system document picker). When this path is live, each app writes log files into the shared folder *in addition to* its own ubiquity container, and both pools land in one place visible on any device via Files.app / Finder. Caveat: apps cannot automatically bind to an arbitrary iCloud Drive path, the user-initiated picker step is unavoidable, and cross-account iCloud Drive sharing has been historically uneven. Treat this path as best-effort and let writes to the per-account ubiquity container always succeed regardless.
 - **(fallback) Two independent pools.** If shared-folder pathing is flaky or the user never completes the picker step, leave the pools separate. Diagnosing a cross-pool coordination failure then means inspecting one parent device and one child device rather than a single spot; acceptable given the household scale (one household, one child, two child devices).
 
 **What to log** (minimum set; every Failure Mode in the next section corresponds to at least one stable `warn` or `error` event name so searching the pool for that name yields a direct hit):
