@@ -1,43 +1,4 @@
-# PLAN_AB -- Screen Time Scheduler
-
-## Preamble: How PLAN_A and PLAN_B Compare
-
-### Actual differences
-
-The plans share approximately 90% of their design surface -- same frameworks (FamilyControls / ManagedSettings / DeviceActivity), same development-entitlement path, same single-regime enforcement (no system Downtime hybrid), same custom AFMT flow, same QR bootstrap, same daily 00:01 anchor recovery. The genuine divergences:
-
-| Axis | PLAN_A | PLAN_B |
-|------|--------|--------|
-| **Source of truth** | CloudKit (peer-to-peer; every device is a first-class writer) | Mac SQLite (`stsd` daemon is the canonical brain) |
-| **Mac daemon role** | Optional convenience (two topologies: with/without parent Mac) | Required authoritative server |
-| **Override/window resolution** | Each device resolves locally via `OverrideEngine.effectiveWindows()` | Mac pre-compiles 48h intent records; devices execute them |
-| **Manager write path** | CloudKit only | Tailscale HTTPS to Mac (fast path), CloudKit fallback |
-| **FamilyControls on Mac** | Daemon has no FC auth; Controller app holds it | `stsd` XPCs to a GUI helper (`STSHelper.app`) for FC |
-| **Data model naming** | "Subject" (kind: self/managed) | "Profile" with role sets |
-| **Network dependency** | None beyond iCloud | Tailscale for manager fast-path (enforcement is CK-only) |
-
-### Which is better on which axis
-
-- **Resilience**: A wins. No single point of failure; every device can enforce from its local CK cache indefinitely. B's 48h intent horizon is mitigation, not parity.
-- **Simplicity**: A wins. One sync mechanism (CloudKit), one topology model, no Tailscale dependency, no XPC protocol to maintain.
-- **Manager write latency**: B wins marginally. Tailscale HTTPS to a local Mac is faster than CloudKit round-trip. In practice the difference is <1s vs 1--5s for schedule edits -- not user-perceptible for an infrequent operation.
-- **Offline child enforcement**: Tie. Both cache locally. B's 48h pre-compiled intents are slightly more explicit; A's local OverrideEngine achieves the same result from cached CK records.
-- **Self-shielding model**: A wins. The Subject abstraction cleanly handles self vs. managed in one type hierarchy. B's "Profile" concept is functionally equivalent but less precisely named.
-
-### Same plan or different?
-
-These are the same plan with a different authority model bolted on top. The enforcement path, AFMT flow, bootstrap, failure modes, and module structure are nearly identical. The "Mac-as-authority" vs. "CloudKit-as-authority" choice is the only architectural fork.
-
-### Decision: Hybrid, based on PLAN_A
-
-CloudKit as source of truth (A's model) is simpler and more resilient. B's Mac-authority adds a single point of failure and an extra network dependency (Tailscale) for negligible latency benefit on infrequent operations. However, B contributes two ideas worth keeping:
-
-1. **XPC to GUI helper for Mac FC auth** -- cleaner than A's implicit "Controller app holds it" hand-wave. The daemon should not touch FC, and the separation should be explicit.
-2. **48h intent caching** -- each device can cache a pre-resolved 48h window of intents alongside its CK records, improving offline resilience.
-
-Everything below is the merged plan.
-
----
+# Screen Time Scheduler
 
 ## Context
 
@@ -70,11 +31,9 @@ The unit of shielding is a **Subject** -- an entity whose apps are shielded by s
 
 ## Architecture
 
-**One app, many roles.** There is no separate "management app" and "child app." One app serves both roles -- schedule management and enforcement target. What differs per device is *runtime configuration*: which FamilyControls authorization it holds (`.individual` or `.child`) and which roles are active (manager, enforcer, or both). This is not just a design preference; Apple requires the same bundle ID on the parent device (where `FamilyActivityPicker(.child)` selects apps) and the child device (where shields take effect). Separate apps with different bundle IDs would break token transfer.
+**One app, many roles.** A single app serves both schedule management and enforcement; what differs per device is *runtime configuration* (which FC authorization it holds, which roles are active). Apple requires the same bundle ID on the parent device (where `FamilyActivityPicker(.child)` selects apps) and the child device (where shields take effect), so separate apps would break token transfer. The Xcode project has separate platform targets (iOS/iPadOS, macOS) sharing a common Swift core.
 
-The Xcode project has separate platform targets (iOS/iPadOS, macOS) sharing a common Swift core. The diagram annotations below describe each device's runtime role, not a distinct application.
-
-The only separate process is the optional macOS LaunchAgent daemon, which handles convenience tasks (pruning, notifications) and uses XPC to the main app for any FC-gated operation.
+**CloudKit is the source of truth.** All devices run the same app and are peers writing to a shared CloudKit zone. There is no central server. Each device caches records locally and can enforce indefinitely from that cache.
 
 ```
 Parent iPhone          Parent Mac (optional)        Child iPad       Child iMac
@@ -90,20 +49,22 @@ Parent iPhone          Parent Mac (optional)        Child iPad       Child iMac
                    CKQuerySubscription pushes
 ```
 
-All devices run the same app and are peers writing to CloudKit. The parent Mac, if present, also runs a LaunchAgent daemon for three convenience tasks (none are correctness-critical):
-
-- **Midnight override pruning**: `GrantOverride` and `BlockOverride` records are append-only and each carries an explicit `end` timestamp. A deterministic midnight timer deletes records whose `end` has passed so the log doesn't grow unbounded. Without the daemon, each device's `OverrideEngine` silently skips ended records when consulted, but the CK records linger until a device lazily cleans them up.
-- **Centralized business-rule validation**: The daemon re-validates schedule writes (non-overlapping windows, valid time ranges) as a second check after CloudKit sync. Every device already validates locally before writing, so this is belt-and-suspenders — it catches edge cases where two devices write conflicting changes that each passed local validation independently.
-- **Mac-side AFMT notifications**: Action-bearing `UNNotification`s (Deny / +15m / +1h / Rest-of-day) for child extension requests, presented on the parent Mac. Without the daemon, the parent iPhone is the only AFMT notification surface.
-
-The daemon is **not** the source of truth. CloudKit is.
-
 ### Two topologies
 
-- **(a) Separate parent Mac present**: hosts the daemon LaunchAgent for the three convenience tasks above. The main app holds FC auth; the daemon reaches it via XPC if the parent wants self-shielding on that Mac.
+The deployment has one knob: whether a separate parent Mac is present. It is not a code branch — both topologies use CloudKit for all transport.
+
+- **(a) Separate parent Mac present**: hosts an optional LaunchAgent daemon (see below). The main app holds FC auth; the daemon reaches it via XPC if the parent wants self-shielding on that Mac.
 - **(b) No parent Mac**: the parent iPhone is the sole parent device. No daemon, no XPC. Override pruning falls back to lazy per-device cleanup; validation is per-client only; AFMT notifications go only to the iPhone.
 
-Both topologies use CloudKit for all transport. The choice is a deployment knob, not a code branch.
+### Optional macOS daemon
+
+Topology (a) runs a LaunchAgent daemon alongside the main app. The daemon is **not** the source of truth and handles only three convenience tasks (none are correctness-critical):
+
+- **Midnight override pruning**: `GrantOverride` and `BlockOverride` records are append-only and each carries an explicit `end` timestamp. A deterministic midnight timer deletes records whose `end` has passed so the log doesn't grow unbounded. Without the daemon, each device's `OverrideEngine` silently skips ended records when consulted, but the CK records linger until a device lazily cleans them up.
+- **Centralized business-rule validation**: re-validates schedule writes (non-overlapping windows, valid time ranges) as a second check after CloudKit sync. Every device already validates locally before writing, so this is belt-and-suspenders — it catches edge cases where two devices make conflicting changes that each passed local validation independently.
+- **Mac-side AFMT notifications**: action-bearing `UNNotification`s (Deny / +15m / +1h / Rest-of-day) for child extension requests, presented on the parent Mac. Without the daemon, the parent iPhone is the only AFMT notification surface.
+
+The daemon never holds FC auth itself. FC-gated operations are XPC-bounced to the main app, which holds `.individual` auth.
 
 ## Data Model
 
@@ -184,8 +145,8 @@ One DAM schedule per window. `intervalDidStart` checks the weekday and applies t
 
 - **iPadOS 26 (child iPad)**: full modern API surface. Primary enforcement target.
 - **macOS 13 Ventura (child iMac)**: first-generation Mac APIs. Known parity gaps handled by `CapabilityMatrix` (disables unsupported shield types in the editor). `ShieldAction` on macOS 13 is flakier than on iOS — it may fail to wake and process an AFMT override response, leaving the child shielded after the parent approved. Fallback: the app runs continuously as an `LSUIElement` agent (menu bar only, no dock icon) under a KeepAlive LaunchAgent, polling CloudKit every 60s while a shield is active so override responses aren't lost to extension misfires. Core shield-on/shield-off enforcement still works via DAM without the app running. Wake-from-sleep LaunchAgent pings DAM to re-register schedules after sleep. Treat gaps as permanent (hardware cannot run macOS 14+).
-- **Parent Mac (optional)**: LaunchAgent daemon for convenience (pruning, validation, notifications). FC-gated operations go via XPC to the main app, which holds `.individual` auth. Daemon responsibilities are not correctness-critical.
 - **Parent iPhone**: regular CloudKit client. Optional self-target via `.individual` FC auth. The editor rejects adding the app's own bundle ID to any token group (prevents self-lockout).
+- **Parent Mac (optional)**: see Architecture → Optional macOS daemon. Self-target via `.individual` FC auth held in the main app, reached from the daemon via XPC.
 
 ## Module Layout
 
@@ -213,31 +174,6 @@ ScreenTimeScheduler/
   Shared/
     Logging
 ```
-
-## Failure Modes
-
-1. **CK propagation lag during AFMT round trip**: CloudKit silent pushes typically land in 1--15s but can spike to minutes under server load. Two directions to cover:
-   - **Request push (child → parent)**: child writes an `ExtensionRequest` to CloudKit; parent devices wake via `CKQuerySubscription` to show the action notification. If the push is delayed:
-     - **Topology (a), parent Mac present**: the always-running daemon polls CloudKit on a deterministic timer and presents the notification on the Mac when it finds a pending request. This is the real fallback.
-     - **Topology (b), parent iPhone only**: no automatic fallback -- iOS background execution is opportunistic, not on-demand, so nothing in the plan guarantees the app is foregrounded. The parent sees the notification whenever APNs eventually delivers the push. The **social fallback** is the mechanism: the child says "I sent you a request, did you get it?" and the parent opens the app. App launch always triggers `SyncCoordinator` to do a `CKFetchRecordZoneChangesOperation` against `ScheduleZone`, which pulls any pending `ExtensionRequest` records into the local cache. The requests view surfaces them with the same Deny / +15m / +1h / Rest-of-day actions the notification would have offered, producing an identical decision write. This is acceptable for a household tool; see Open Risks for when it isn't.
-   - **Response push (parent → child)**: parent's decision writes a `GrantOverride` (or updates `ExtensionRequest.outcome` to `denied`) to CloudKit; child's DAM extension wakes via push to apply the decision. If the push is delayed, the fallback chain depends on the child device:
-     - **Child iMac**: the app is open-at-login (see Bootstrap), so it continuously polls CloudKit every 60s while a shield is active and applies any override it finds.
-     - **Child iPad**: the child has no reason to open the main app, so continuous polling isn't available. The fallback is the child's **natural retry**: a frustrated child taps the shielded app again, re-invoking `ShieldActionExtension`. Before writing a new `ExtensionRequest`, the extension does a targeted CloudKit fetch (and consults the local GRDB cache) for the current request's `outcome`. If it has been updated to `granted(grantOverrideId)`, the extension applies that `GrantOverride` directly against its own `ManagedSettingsStore` (same App Group, same authorization context as the main app and DAM extension) -- subtracting the grant's `appToken` from the shield set (the grant is already scoped to this device via its `deviceId`, and the token was picked on this device so it's interpretable here) -- then returns `.close` to dismiss the shield UI. The child drops straight back to the app they tapped, no main-app context switch. If the outcome is `denied`, the extension surfaces a denial message and returns `.close`. If still `pending` (or no prior request exists), the extension writes a fresh request (CloudKit dedupes by `id`, so the parent sees one request even if the child taps multiple times). The child's retry IS the recovery trigger -- no main-app interaction required.
-     - **Catch-all (all devices)**: the daily 00:01 recovery anchor re-reconciles on the next morning wake, bounding worst-case drift at <24h.
-2. **DAM missed callback**: idempotent re-registration on multiple triggers (see Recovery above).
-3. **Token drift after OS upgrade**: `TokenResolver` verifies tokens against installed app inventory at launch. If tokens are stale, behavior depends on the subject kind:
-   - **Managed child**: the app switches to a blanket category shield (all apps blocked except the enforcement app itself) for the affected token groups, erring on enforcement rather than failing open. The app surfaces a "tokens need refresh" status visible to the child but not actionable by them. The **parent** must re-pick tokens — either by running `FamilyActivityPicker(.child)` on the child's device directly (handed the device) or from their own device via Apple's guardian-context picker flow (iOS 16+, returns tokens valid on the child device). A silent push notifies parent devices that re-pick is needed.
-   - **Self subject**: the app surfaces a re-pick UI directly; the user runs `FamilyActivityPicker` themselves.
-4. **All parent devices offline**: children enforce from local cache. Edits queue and flush on reconnect.
-5. **Child uninstalls app**: blocked by `.child` FC auth (requires guardian passcode). On macOS, admin credentials required.
-6. **iCloud account change**: CK zone resets; re-pair via QR.
-7. **macOS API gaps**: `CapabilityMatrix` disables unsupported shield types per device.
-8. **System Downtime overlap**: orthogonal stores, no arbitration. Onboarding asks user to disable system Downtime on enforced devices.
-9. **Adjacent-window boundary race**: editor enforces >=1s gaps.
-10. **ShieldAction killed mid-write**: local outbox first; main app flushes on next launch.
-11. **Mac daemon down**: pruning/validation/notifications degrade gracefully. Not correctness-critical.
-12. **App shielded by itself**: editor rejects the app's own bundle ID; ShieldActionExtension hard-codes an exemption.
-13. **Self-subject bypass**: `.individual` auth revocable from Settings at any time. Intentional -- focus tool, not parental control.
 
 ## Required Entitlements
 
@@ -295,6 +231,31 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 ### Annual maintenance
 
 Development provisioning profiles expire after 12 months. Rebuild and reinstall from Xcode on each device (~10 min/device). Set a calendar reminder. The app continues running after expiry until iOS/macOS revalidates the profile, but don't rely on the grace period.
+
+## Failure Modes
+
+1. **CK propagation lag during AFMT round trip**: CloudKit silent pushes typically land in 1--15s but can spike to minutes under server load. Two directions to cover:
+   - **Request push (child → parent)**: child writes an `ExtensionRequest` to CloudKit; parent devices wake via `CKQuerySubscription` to show the action notification. If the push is delayed:
+     - **Topology (a), parent Mac present**: the always-running daemon polls CloudKit on a deterministic timer and presents the notification on the Mac when it finds a pending request. This is the real fallback.
+     - **Topology (b), parent iPhone only**: no automatic fallback -- iOS background execution is opportunistic, not on-demand, so nothing in the plan guarantees the app is foregrounded. The parent sees the notification whenever APNs eventually delivers the push. The **social fallback** is the mechanism: the child says "I sent you a request, did you get it?" and the parent opens the app. App launch always triggers `SyncCoordinator` to do a `CKFetchRecordZoneChangesOperation` against `ScheduleZone`, which pulls any pending `ExtensionRequest` records into the local cache. The requests view surfaces them with the same Deny / +15m / +1h / Rest-of-day actions the notification would have offered, producing an identical decision write. This is acceptable for a household tool; see Open Risks for when it isn't.
+   - **Response push (parent → child)**: parent's decision writes a `GrantOverride` (or updates `ExtensionRequest.outcome` to `denied`) to CloudKit; child's DAM extension wakes via push to apply the decision. If the push is delayed, the fallback chain depends on the child device:
+     - **Child iMac**: the app is open-at-login (see Bootstrap), so it continuously polls CloudKit every 60s while a shield is active and applies any override it finds.
+     - **Child iPad**: the child has no reason to open the main app, so continuous polling isn't available. The fallback is the child's **natural retry**: a frustrated child taps the shielded app again, re-invoking `ShieldActionExtension`. Before writing a new `ExtensionRequest`, the extension does a targeted CloudKit fetch (and consults the local GRDB cache) for the current request's `outcome`. If it has been updated to `granted(grantOverrideId)`, the extension applies that `GrantOverride` directly against its own `ManagedSettingsStore` (same App Group, same authorization context as the main app and DAM extension) -- subtracting the grant's `appToken` from the shield set (the grant is already scoped to this device via its `deviceId`, and the token was picked on this device so it's interpretable here) -- then returns `.close` to dismiss the shield UI. The child drops straight back to the app they tapped, no main-app context switch. If the outcome is `denied`, the extension surfaces a denial message and returns `.close`. If still `pending` (or no prior request exists), the extension writes a fresh request (CloudKit dedupes by `id`, so the parent sees one request even if the child taps multiple times). The child's retry IS the recovery trigger -- no main-app interaction required.
+     - **Catch-all (all devices)**: the daily 00:01 recovery anchor re-reconciles on the next morning wake, bounding worst-case drift at <24h.
+2. **DAM missed callback**: idempotent re-registration on multiple triggers (see Enforcement Per Device → Recovery from missed callbacks).
+3. **Token drift after OS upgrade**: `TokenResolver` verifies tokens against installed app inventory at launch. If tokens are stale, behavior depends on the subject kind:
+   - **Managed child**: the app switches to a blanket category shield (all apps blocked except the enforcement app itself) for the affected token groups, erring on enforcement rather than failing open. The app surfaces a "tokens need refresh" status visible to the child but not actionable by them. The **parent** must re-pick tokens — either by running `FamilyActivityPicker(.child)` on the child's device directly (handed the device) or from their own device via Apple's guardian-context picker flow (iOS 16+, returns tokens valid on the child device). A silent push notifies parent devices that re-pick is needed.
+   - **Self subject**: the app surfaces a re-pick UI directly; the user runs `FamilyActivityPicker` themselves.
+4. **All parent devices offline**: children enforce from local cache. Edits queue and flush on reconnect.
+5. **Child uninstalls app**: blocked by `.child` FC auth (requires guardian passcode). On macOS, admin credentials required.
+6. **iCloud account change**: CK zone resets; re-pair via QR.
+7. **macOS API gaps**: `CapabilityMatrix` disables unsupported shield types per device.
+8. **System Downtime overlap**: orthogonal stores, no arbitration. Onboarding asks user to disable system Downtime on enforced devices.
+9. **Adjacent-window boundary race**: editor enforces >=1s gaps.
+10. **ShieldAction killed mid-write**: local outbox first; main app flushes on next launch.
+11. **Mac daemon down**: pruning/validation/notifications degrade gracefully. Not correctness-critical.
+12. **App shielded by itself**: editor rejects the app's own bundle ID; ShieldActionExtension hard-codes an exemption.
+13. **Self-subject bypass**: `.individual` auth revocable from Settings at any time. Intentional -- focus tool, not parental control.
 
 ## Open Risks
 
