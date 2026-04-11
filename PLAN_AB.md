@@ -127,31 +127,35 @@ Both topologies use CloudKit for all transport. The choice is a deployment knob,
 - **48h intent cache**: a *derived* projection computed from the GRDB cache by `ScheduleCompiler` + `OverrideEngine`. Stored alongside the raw records in the same GRDB database. Recomputed after every sync, on local override writes, and at midnight rollover. Not authoritative -- can be rebuilt from the raw records at any time. Its purpose is to decouple enforcement (extensions, which read the cache) from sync (main app, which produces it), and to keep enforcement running for up to 48h if CloudKit is unreachable.
 - **QR-bootstrap handshake** first (exchanges CK zone IDs + encryption keys), CKShare acceptance second. Avoids under-13 CKShare flakiness blocking first-run.
 
-### Sync triggers on the subject device
+### Runtime triggers
 
-`SyncCoordinator` runs in the main app process only. The `DeviceActivityMonitor`, `ShieldConfiguration`, and `ShieldAction` extensions are separate processes with tight execution budgets and never do full syncs -- they read the pre-compiled 48h intent cache from the shared GRDB database in the App Group container. Intent cache recomputation happens wherever a sync lands (i.e., the main app process) and is persisted to GRDB so extensions observe the new cache on their next wake. The iOS and macOS trigger models are meaningfully different:
+`SyncCoordinator` runs in the main app process only. The `DeviceActivityMonitor`, `ShieldConfiguration`, and `ShieldAction` extensions are separate processes with tight execution budgets and never do full syncs -- they read the pre-compiled 48h intent cache from the shared GRDB database in the App Group container. Intent cache recomputation happens wherever a sync lands (i.e., the main app process) and is persisted to GRDB so extensions observe the new cache on their next wake.
+
+Each trigger below does some subset of: **(a)** full `SyncCoordinator` run (CK fetch + GRDB merge + intent cache recompute), **(b)** idempotent DAM re-registration (diff desired vs. current DAM schedule registration against the intent cache, reapply the diff, no-op when empty), or **(c)** targeted single-record CK fetch. Re-registration is the only recovery mechanism for missed DAM callbacks and is referenced from **Enforcement Per Device → Recovery from missed callbacks** below. The iOS and macOS models are meaningfully different:
 
 **iOS / iPadOS (parent iPhone, child iPad)**
 
-The main app is normally suspended. `SyncCoordinator` runs on:
+The main app is normally suspended.
 
-- **Silent push wake** from a `CKQuerySubscription`. iOS briefly wakes the main app in the background (a few seconds of runtime) when a push arrives with `content-available: 1`. This is the primary fresh-data path on the child iPad, since the child has no reason to foreground the app. On wake, `SyncCoordinator` issues `CKFetchRecordZoneChangesOperation`, merges new records into GRDB, recomputes the intent cache, and diffs DAM registration.
-- **Foreground launch** -- full sync. Rare on the child iPad; common on the parent iPhone when the parent opens the app to edit schedules or respond to a request.
-- **`BGAppRefreshTask`** -- opportunistic, iOS-scheduled. Not relied upon for correctness; used if granted.
+- **Silent push wake** (main app, background) from a `CKQuerySubscription`. iOS briefly wakes the main app (a few seconds of runtime) when a push arrives with `content-available: 1`. Runs **(a) + (b)**: `SyncCoordinator` issues `CKFetchRecordZoneChangesOperation`, merges new records into GRDB, recomputes the intent cache, and re-registers DAM schedules. Primary fresh-data path on the child iPad, since the child has no reason to foreground the app.
+- **Foreground launch** (main app). Runs **(a) + (b)**. Rare on the child iPad; common on the parent iPhone when the parent opens the app to edit schedules or respond to a request.
+- **`BGAppRefreshTask`** (main app, background). Opportunistic, iOS-scheduled. Runs **(a) + (b)** when granted. Not relied upon for correctness.
+- **DAM extension wake** (`DeviceActivityMonitorExtension` process) on `intervalDidStart` / `intervalDidEnd` / the daily 00:01--12:00 recovery anchor. Applies the current `ManagedSettingsStore` shield and runs **(b)** from the *local* intent cache. Does **not** sync -- the extension's execution budget is too tight to trust a network round trip.
+- **ShieldAction extension wake** (`ShieldActionExtension` process) when the child taps a shielded app. Writes an `ExtensionRequest` to the local outbox, and as part of the child-retry recovery path in Failure Mode #1 does **(c)** for the current request's `outcome`. No full sync, no full re-registration.
 
-`ShieldActionExtension` is the one exception to the "extensions don't sync" rule: as part of the child-retry recovery path in Failure Mode #1, it does a *targeted* single-record CK fetch for the current `ExtensionRequest.outcome`. This is scoped to one record and does not recompile the intent cache.
-
-If no wake opportunity arrives, the GRDB cache and intent cache both go stale. Scheduled shielding keeps working from the stale cache (the schedule hasn't changed), but parent decisions made during the gap don't reach the iPad until the next successful sync. The daily 00:01 recovery anchor is the coarse catch-all.
+If no silent push wake or foreground launch arrives, the GRDB cache and intent cache both go stale. Scheduled shielding keeps working from the stale cache (DAM extension wakes keep re-registering from it, and the schedule hasn't changed), but parent decisions made during the gap don't reach the iPad until the next successful sync. The daily 00:01 recovery anchor is the coarse catch-all.
 
 **macOS (child iMac, optional parent Mac)**
 
-The main app is continuously resident as an `LSUIElement` background agent under a `KeepAlive` LaunchAgent (see Bootstrap), so the "wake" step disappears -- silent pushes land in an already-running process and polling fallbacks are cheap. `SyncCoordinator` runs on:
+The main app is continuously resident as an `LSUIElement` background agent under a `KeepAlive` LaunchAgent (see Bootstrap), so the "wake" step disappears -- silent pushes land in an already-running process and polling fallbacks are cheap.
 
-- **Silent push** from `CKQuerySubscription`, handled in-process.
-- **60s periodic poll** while a shield is active, as a fallback for macOS 13's less reliable silent-push delivery (see platform notes under Enforcement Per Device).
-- **Wake-from-sleep** -- the LaunchAgent pings the app after resume, triggering one sync + DAM re-registration.
-- **App launch at login** -- full sync on the first run of the user session.
-- **Parent Mac only**: after any AFMT notification-action handler runs, a sync is issued before the decision write so the parent's action is based on current data.
+- **Silent push** (main app, already running) from `CKQuerySubscription`. Runs **(a) + (b)**.
+- **60s periodic poll** (main app) while a shield is active. Runs **(a) + (b)**. Fallback for macOS 13's less reliable silent-push delivery (see platform notes under Enforcement Per Device).
+- **Wake-from-sleep** (main app). The LaunchAgent pings the app after resume. Runs **(a) + (b)**.
+- **App launch at login** (main app). Runs **(a) + (b)** on the first run of the user session.
+- **Parent Mac only**: after any AFMT notification-action handler runs, **(a)** is issued before the decision write so the parent's action is based on current data.
+- **DAM extension wake** (`DeviceActivityMonitorExtension` process) on `intervalDidStart` / `intervalDidEnd` / the daily 00:01--12:00 recovery anchor. Same behavior as iOS -- applies the shield and runs **(b)** from the local intent cache. Does **not** sync.
+- **ShieldAction extension wake** (`ShieldActionExtension` process). Same as iOS -- **(c)** for the current request's `outcome`.
 
 No `BGAppRefreshTask` equivalent is needed; continuous residency replaces background-task scheduling entirely.
 
@@ -174,14 +178,7 @@ Round-trip target: <10s with both ends online. The parent Mac daemon (if present
 
 One DAM schedule per window. `intervalDidStart` checks the weekday and applies the ManagedSettingsStore shield. `intervalDidEnd` clears the store. When a `GrantOverride` is active (its `[start, end)` covers now and its scope matches the current window), the shield set is adjusted and a non-repeating post-override schedule is registered from the grant's `end` to the window's end, restoring the pre-override shield for the remainder. For **group-wide** grants the entire group's tokens are removed from the shield set; for **app-scoped** grants only the specific `appToken` is subtracted and re-added at the grant's `end`, leaving the rest of the group's apps shielded. The editor enforces non-overlapping windows (>=1s gap) to prevent boundary races.
 
-**Recovery from missed callbacks**: idempotent re-registration triggered from:
-- Daily 00:01--12:00 anchor schedule (wide window survives overnight-off devices)
-- Every app launch
-- Every DAM extension wake
-- Every CloudKit silent-push wake
-- (macOS) Wake-from-sleep ping via LaunchAgent
-
-The handler diffs desired vs. current registration and no-ops when they match.
+**Recovery from missed callbacks**: idempotent DAM re-registration -- step **(b)** under **Sync Strategy → Runtime triggers** -- runs on every trigger listed there (silent push wake, foreground launch, BG refresh task, DAM extension wake, plus macOS-specific triggers). The handler diffs desired vs. current DAM schedule registration against the intent cache and no-ops when they match. The daily 00:01--12:00 anchor is the coarse catch-all: a DAM schedule with a wide window that survives overnight-off devices and guarantees at least one re-registration per day.
 
 ### Platform-specific notes
 
