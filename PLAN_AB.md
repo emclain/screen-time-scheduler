@@ -155,7 +155,7 @@ The handler diffs desired vs. current registration and no-ops when they match.
 ### Platform-specific notes
 
 - **iPadOS 26 (child iPad)**: full modern API surface. Primary enforcement target.
-- **macOS 13 Ventura (child iMac)**: first-generation Mac APIs. Known parity gaps handled by `CapabilityMatrix` (disables unsupported shield types in the editor). `ShieldAction` on macOS 13 is flakier than on iOS — it may fail to wake and process an AFMT override response, leaving the child shielded after the parent approved. Fallback: when the app is running, it polls CloudKit every 60s while a shield is active so override responses aren't lost to extension misfires. This means the app must be running on the child iMac for reliable AFMT (see Bootstrap for open-at-login setup). Core shield-on/shield-off enforcement still works via DAM without the app running. Wake-from-sleep LaunchAgent pings DAM to re-register schedules after sleep. Treat gaps as permanent (hardware cannot run macOS 14+).
+- **macOS 13 Ventura (child iMac)**: first-generation Mac APIs. Known parity gaps handled by `CapabilityMatrix` (disables unsupported shield types in the editor). `ShieldAction` on macOS 13 is flakier than on iOS — it may fail to wake and process an AFMT override response, leaving the child shielded after the parent approved. Fallback: the app runs continuously as an `LSUIElement` agent (menu bar only, no dock icon) under a KeepAlive LaunchAgent, polling CloudKit every 60s while a shield is active so override responses aren't lost to extension misfires. Core shield-on/shield-off enforcement still works via DAM without the app running. Wake-from-sleep LaunchAgent pings DAM to re-register schedules after sleep. Treat gaps as permanent (hardware cannot run macOS 14+).
 - **Parent Mac (optional)**: LaunchAgent daemon for convenience (pruning, validation, notifications). FC-gated operations go via XPC to the main app, which holds `.individual` auth. Daemon responsibilities are not correctness-critical.
 - **Parent iPhone**: regular CloudKit client. Optional self-target via `.individual` FC auth. The editor rejects adding the app's own bundle ID to any token group (prevents self-lockout).
 
@@ -261,9 +261,8 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 4. QR-bootstrap handshake and `CKShare` acceptance, same as child iPad.
 5. Present `FamilyActivityPicker` to capture token sets.
 6. App registers DAM schedules and the daily recovery anchor.
-7. **Open at login**: the app registers itself as a login item (`SMAppService.register`) so it launches automatically when the child logs in. This is required for the 60s CloudKit polling fallback that compensates for macOS 13's flaky `ShieldAction` (see Platform-specific notes).
-8. Install wake-from-sleep LaunchAgent plist to `~/Library/LaunchAgents/` in the child's session. This pings DAM on wake to re-register schedules that may have been dropped during sleep.
-9. Restrict the non-privileged account: use macOS Parental Controls / Screen Time account settings to prevent the child from modifying System Settings, removing login items, or deleting the app. Admin credentials required for these changes.
+7. **Background operation**: the app is built with `LSUIElement = true` (no dock icon, no app switcher entry, no application menu). A small menu bar item is the only visible surface, used by the parent for token re-pick and status. The child has no affordance to quit the app through normal UI.
+8. Install a LaunchAgent plist to `~/Library/LaunchAgents/` in the child's session with `RunAtLoad = true` and `KeepAlive = true`. This launches the app at login and automatically relaunches it if it exits. The same LaunchAgent also pings DAM on wake from sleep.
 
 ### Annual maintenance
 
