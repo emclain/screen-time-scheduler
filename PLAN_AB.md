@@ -257,7 +257,7 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 
 1. Create a non-privileged standard macOS user account for the child. The child logs in to this account with their own Apple ID.
 2. Install app from Xcode in the child's user session.
-3. App launches onboarding: request FamilyControls `.individual` authorization (not `.child` — on macOS, the child's own Apple ID signs in and the app shields that user session with `.individual`).
+3. App launches onboarding: attempt to request FamilyControls `.child` authorization (matches the iPad, tamper-resistant). **Open question**: whether `.child` is actually available on macOS 13 for a Family Sharing child Apple ID — the framework is documented as available on macOS 13+ with "similar semantics" to iOS, but `.child` specifically has not been verified. If `.child` fails at runtime, fall back to `.individual` and flag the weaker guarantees (see Open Risks).
 4. QR-bootstrap handshake and `CKShare` acceptance, same as child iPad.
 5. Present `FamilyActivityPicker` to capture token sets.
 6. App registers DAM schedules and the daily recovery anchor.
@@ -278,3 +278,4 @@ Development provisioning profiles expire after 12 months. Rebuild and reinstall 
 6. **iMac 2017 security EOL** -- household problem, not a plan defect.
 7. **Apple API changes at WWDC** -- custom AFMT is the most framework-coupled piece. Dev path means no App Review risk, but API removal would require code changes.
 8. **Topology (b) relies on a social fallback for delayed request pushes** -- if the parent runs iPhone-only and APNs delays a child's AFMT request push, the plan falls back to the child telling the parent out-of-band ("did you get my request?"), after which the parent opens the app and the startup sync picks up the pending request. Acceptable for a household tool where the parent and child are typically co-located or in contact. The mitigation for households where the social channel is unreliable (parent at work, child home alone) is to run topology (a) with a parent Mac daemon.
+9. **FamilyControls `.child` availability on macOS 13** -- unverified. The framework is documented as available on macOS 13+ with "similar semantics" to iOS, but it is not confirmed that `.child` authorization specifically works on a Mac signed in as a Family Sharing child Apple ID. If it does, the child iMac gets the same tamper-resistant enforcement as the iPad. If it doesn't, the plan falls back to `.individual`, which the child can revoke from Settings at any time with no passcode -- a significant weakening of enforcement on the iMac. Needs to be verified empirically before building. If `.child` is unavailable, consider whether the iMac is a viable enforced child device at all under this plan.
