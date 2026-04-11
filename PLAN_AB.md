@@ -92,7 +92,7 @@ Parent iPhone          Parent Mac (optional)        Child iPad       Child iMac
 
 All devices run the same app and are peers writing to CloudKit. The parent Mac, if present, also runs a LaunchAgent daemon for three convenience tasks (none are correctness-critical):
 
-- **Midnight override pruning**: Overrides are append-only CK records with `expiresAt` timestamps. A deterministic midnight timer deletes expired overrides so the log doesn't grow unbounded. Without the daemon, each device's `OverrideEngine` silently skips expired overrides when consulted, but the CK records linger until a device lazily cleans them up.
+- **Midnight override pruning**: `GrantOverride` and `BlockOverride` records are append-only and have a natural end time (`expiresAt` for grants, `end` for blocks). A deterministic midnight timer deletes records whose end time has passed so the log doesn't grow unbounded. Without the daemon, each device's `OverrideEngine` silently skips ended records when consulted, but the CK records linger until a device lazily cleans them up.
 - **Centralized business-rule validation**: The daemon re-validates schedule writes (non-overlapping windows, valid time ranges) as a second check after CloudKit sync. Every device already validates locally before writing, so this is belt-and-suspenders — it catches edge cases where two devices write conflicting changes that each passed local validation independently.
 - **Mac-side AFMT notifications**: Action-bearing `UNNotification`s (Deny / +15m / +1h / Rest-of-day) for child extension requests, presented on the parent Mac. Without the daemon, the parent iPhone is the only AFMT notification surface.
 
@@ -110,12 +110,13 @@ Both topologies use CloudKit for all transport. The choice is a deployment knob,
 - **Subject**: `id`, `displayName`, `kind` (self | managed), `timezone`, `devices: [Device]`.
 - **Schedule**: per-subject weekly template. `subjectId`, windows, `version`, `updatedAt`.
 - **Window**: `id`, `weekdays`, `start`, `end`, `groupId: WindowGroupID`, `allowRequests`. Every window is a shield -- no mode enum.
-- **Override**: append-only. `id`, `subjectId`, `deviceId?`, `kind`, `createdBy`, `createdAt`, `expiresAt`. Kinds: reject, extend(minutes), restOfDay, skipWindow, addBlock, disableAllForDay.
+- **GrantOverride**: append-only. Removes shielding. `id`, `subjectId`, `deviceId?`, `kind`, `createdBy`, `createdAt`, `expiresAt`. Kinds: `extend(minutes)`, `restOfDay`, `skipWindow(windowId)`, `disableAllForDay`.
+- **BlockOverride**: append-only. Adds ad-hoc shielding. `id`, `subjectId`, `deviceId?`, `start`, `end`, `groupId: WindowGroupID`, `createdBy`, `createdAt`.
 - **Device**: `id`, `subjectId`, `platform`, `osVersion`, `capabilities: Set<Capability>`.
 - **TokenBundle**: per-device opaque token blobs keyed by `deviceId`, indexed by `WindowGroupID`. Tokens stay on the device that picked them.
-- **ExtensionRequest**: `id`, `subjectId`, `deviceId`, `windowId`, `appTokenRef`, `createdAt`, `state` (pending | decided), `decisionRef?`.
+- **ExtensionRequest**: `id`, `subjectId`, `deviceId`, `windowId`, `appTokenRef`, `createdAt`, `outcome` (`pending` | `denied` | `granted(GrantOverrideID)`), `decidedAt?`, `decidedBy?`. A denial is recorded on the request itself; a grant produces a `GrantOverride` and links it via `outcome`.
 
-**Conflict resolution**: Overrides are append-only (no conflicts). Schedules/Windows use CloudKit's server-stamped `modificationDate` for LWW and `CKRecordSavePolicy.ifServerRecordUnchanged` for CAS. Server-side timestamps eliminate client-clock-skew issues.
+**Conflict resolution**: `GrantOverride` and `BlockOverride` are append-only (no conflicts); `ExtensionRequest.outcome` transitions pending -> decided exactly once, enforced by CAS. Schedules/Windows use CloudKit's server-stamped `modificationDate` for LWW and `CKRecordSavePolicy.ifServerRecordUnchanged` for CAS. Server-side timestamps eliminate client-clock-skew issues.
 
 ## Sync Strategy
 
@@ -132,10 +133,12 @@ Both topologies use CloudKit for all transport. The choice is a deployment knob,
 2. Tap writes an `ExtensionRequest` to local outbox, then to CloudKit.
 3. `CKQuerySubscription` silent push wakes parent devices.
 4. Parent sees a `UNNotification` with actions: **Deny / +15m / +1h / Rest-of-day**.
-5. Parent taps an action, writing an `Override` to CloudKit.
-6. Child's DAM extension wakes via push, clears the shield for the granted duration.
+5. Parent taps an action:
+   - **Deny**: CAS-update the `ExtensionRequest.outcome` from `pending` to `denied`. No `GrantOverride` is written.
+   - **+15m / +1h / Rest-of-day**: write a `GrantOverride` (`extend(15)`, `extend(60)`, or `restOfDay`) and CAS-update `ExtensionRequest.outcome` to `granted(grantOverrideId)`.
+6. Child's DAM extension wakes via push. If granted, it clears the shield for the override's duration; if denied, it stays as scheduled.
 
-**Self-subject short-circuit**: for `Subject(kind: .self)`, the `ShieldActionExtension` returns `.defer`, which opens the main app. The app detects the pending self-request and presents an approval sheet (**Deny / +15m / +1h / Rest-of-day**). The user approves themselves; the app writes the `Override` directly to the local GRDB cache (mirrored to CloudKit for multi-device sync). Steps 3--5 are skipped.
+**Self-subject short-circuit**: for `Subject(kind: .self)`, the `ShieldActionExtension` returns `.defer`, which opens the main app. The app detects the pending self-request and presents an approval sheet (**Deny / +15m / +1h / Rest-of-day**). The user approves themselves; the app writes the decision directly to the local GRDB cache (mirrored to CloudKit for multi-device sync). Steps 3--5 are skipped.
 
 Round-trip target: <10s with both ends online. The parent Mac daemon (if present) is an always-online relay when the parent iPhone is asleep.
 
@@ -165,7 +168,7 @@ The handler diffs desired vs. current registration and no-ops when they match.
 ScreenTimeScheduler/
   App/              iOSApp, iPadApp, macOSApp, AppDelegate+Push
   Core/
-    Models/         Schedule, Window, Override, Subject, Device, TokenBundle
+    Models/         Schedule, Window, GrantOverride, BlockOverride, ExtensionRequest, Subject, Device, TokenBundle
     Persistence/    LocalStore (GRDB), AppGroupPaths, IntentCache
     Sync/           CloudKitSchema, SyncCoordinator (actor), SubscriptionManager
     Scheduling/     ScheduleCompiler, OverrideEngine, CapabilityMatrix
@@ -191,10 +194,10 @@ ScreenTimeScheduler/
 1. **CK propagation lag during AFMT round trip**: CloudKit silent pushes typically land in 1--15s but can spike to minutes under server load. Two directions to cover:
    - **Request push (child → parent)**: child writes an `ExtensionRequest` to CloudKit; parent devices wake via `CKQuerySubscription` to show the action notification. If the push is delayed:
      - **Topology (a), parent Mac present**: the always-running daemon polls CloudKit on a deterministic timer and presents the notification on the Mac when it finds a pending request. This is the real fallback.
-     - **Topology (b), parent iPhone only**: no automatic fallback -- iOS background execution is opportunistic, not on-demand, so nothing in the plan guarantees the app is foregrounded. The parent sees the notification whenever APNs eventually delivers the push. The **social fallback** is the mechanism: the child says "I sent you a request, did you get it?" and the parent opens the app. App launch always triggers `SyncCoordinator` to do a `CKFetchRecordZoneChangesOperation` against `ScheduleZone`, which pulls any pending `ExtensionRequest` records into the local cache. The requests view surfaces them with the same Deny / +15m / +1h / Rest-of-day actions the notification would have offered, producing an identical `Override` write. This is acceptable for a household tool; see Open Risks for when it isn't.
-   - **Response push (parent → child)**: parent's decision writes an `Override` to CloudKit; child's DAM extension wakes via push to clear the shield. If the push is delayed, the fallback chain depends on the child device:
+     - **Topology (b), parent iPhone only**: no automatic fallback -- iOS background execution is opportunistic, not on-demand, so nothing in the plan guarantees the app is foregrounded. The parent sees the notification whenever APNs eventually delivers the push. The **social fallback** is the mechanism: the child says "I sent you a request, did you get it?" and the parent opens the app. App launch always triggers `SyncCoordinator` to do a `CKFetchRecordZoneChangesOperation` against `ScheduleZone`, which pulls any pending `ExtensionRequest` records into the local cache. The requests view surfaces them with the same Deny / +15m / +1h / Rest-of-day actions the notification would have offered, producing an identical decision write. This is acceptable for a household tool; see Open Risks for when it isn't.
+   - **Response push (parent → child)**: parent's decision writes a `GrantOverride` (or updates `ExtensionRequest.outcome` to `denied`) to CloudKit; child's DAM extension wakes via push to apply the decision. If the push is delayed, the fallback chain depends on the child device:
      - **Child iMac**: the app is open-at-login (see Bootstrap), so it continuously polls CloudKit every 60s while a shield is active and applies any override it finds.
-     - **Child iPad**: the child has no reason to open the main app, so continuous polling isn't available. The fallback is the child's **natural retry**: a frustrated child taps the shielded app again, re-invoking `ShieldActionExtension`. Before writing a new `ExtensionRequest`, the extension does a targeted CloudKit fetch (and consults the local GRDB cache) for any `Override` newer than the last pending request for this `subjectId`/`windowId`. If found, the extension applies the override directly against its own `ManagedSettingsStore` (same App Group, same authorization context as the main app and DAM extension) to clear the shield, then returns `.close` to dismiss the shield UI -- the child drops straight back to the app they tapped, no main-app context switch. The DAM extension re-reconciles on its next wake (silent push, anchor fire, or window boundary). If no override is found, the extension writes a fresh request (CloudKit dedupes by `id`, so the parent sees one request even if the child taps multiple times). The child's retry IS the recovery trigger -- no main-app interaction required.
+     - **Child iPad**: the child has no reason to open the main app, so continuous polling isn't available. The fallback is the child's **natural retry**: a frustrated child taps the shielded app again, re-invoking `ShieldActionExtension`. Before writing a new `ExtensionRequest`, the extension does a targeted CloudKit fetch (and consults the local GRDB cache) for the current request's `outcome`. If it has been updated to `granted(grantOverrideId)`, the extension applies that `GrantOverride` directly against its own `ManagedSettingsStore` (same App Group, same authorization context as the main app and DAM extension) to clear the shield, then returns `.close` to dismiss the shield UI -- the child drops straight back to the app they tapped, no main-app context switch. If the outcome is `denied`, the extension surfaces a denial message and returns `.close`. If still `pending` (or no prior request exists), the extension writes a fresh request (CloudKit dedupes by `id`, so the parent sees one request even if the child taps multiple times). The child's retry IS the recovery trigger -- no main-app interaction required.
      - **Catch-all (all devices)**: the daily 00:01 recovery anchor re-reconciles on the next morning wake, bounding worst-case drift at <24h.
 2. **DAM missed callback**: idempotent re-registration on multiple triggers (see Recovery above).
 3. **Token drift after OS upgrade**: `TokenResolver` verifies tokens against installed app inventory at launch. If tokens are stale, behavior depends on the subject kind:
