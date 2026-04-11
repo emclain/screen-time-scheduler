@@ -109,14 +109,14 @@ Both topologies use CloudKit for all transport. The choice is a deployment knob,
 
 - **Subject**: `id`, `displayName`, `kind` (self | managed), `timezone`, `devices: [Device]`.
 - **Schedule**: per-subject weekly template. `subjectId`, windows, `version`, `updatedAt`.
-- **Window**: `id`, `weekdays`, `start`, `end`, `groupId: WindowGroupID`, `allowRequests`. Every window is a shield -- no mode enum.
-- **GrantOverride**: append-only. Clears or narrows shielding for the half-open interval `[start, end)`. `id`, `subjectId`, `groupId?: WindowGroupID`, `deviceId?`, `appToken?`, `start`, `end`, `originatingRequestId?`, `createdBy`, `createdAt`. `start` and `end` are absolute timestamps computed once at grant creation and never updated ("+15m tapped at 15:00" becomes `{start: 15:00, end: 15:15}`; "rest of day" becomes `{start: now, end: endOfDay(subject.timezone)}`; a pre-scheduled snow-day disable can set `start` in the future). Scoping: `groupId` nil is subject-wide (all groups); when `appToken` is non-nil the grant is **single-device app-scoped**, and `deviceId` must identify the owning device because `ApplicationToken` is opaque and only interpretable there. `originatingRequestId` links back to the `ExtensionRequest` for AFMT-sourced grants and is nil for parent-initiated grants.
-- **BlockOverride**: append-only. Adds ad-hoc shielding. `id`, `subjectId`, `start`, `end`, `groupId: WindowGroupID`, `createdBy`, `createdAt`. Group-scoped, subject-wide (applies to every device of the subject).
+- **Window**: `id`, `weekdays`, `start`, `end`, `groupId: TokenGroupID`, `allowRequests`. Every window is a shield -- no mode enum.
+- **GrantOverride**: append-only. Clears or narrows shielding for the half-open interval `[start, end)`. `id`, `subjectId`, `groupId?: TokenGroupID`, `deviceId?`, `appToken?`, `start`, `end`, `originatingRequestId?`, `createdBy`, `createdAt`. `start` and `end` are absolute timestamps computed once at grant creation and never updated ("+15m tapped at 15:00" becomes `{start: 15:00, end: 15:15}`; "rest of day" becomes `{start: now, end: endOfDay(subject.timezone)}`; a pre-scheduled snow-day disable can set `start` in the future). Scoping: `groupId` nil is subject-wide (all groups); when `appToken` is non-nil the grant is **single-device app-scoped**, and `deviceId` must identify the owning device because `ApplicationToken` is opaque and only interpretable there. `originatingRequestId` links back to the `ExtensionRequest` for AFMT-sourced grants and is nil for parent-initiated grants.
+- **BlockOverride**: append-only. Adds ad-hoc shielding. `id`, `subjectId`, `start`, `end`, `groupId: TokenGroupID`, `createdBy`, `createdAt`. Group-scoped, subject-wide (applies to every device of the subject).
 - **Device**: `id`, `subjectId`, `platform`, `osVersion`, `capabilities: Set<Capability>`.
-- **TokenBundle**: per-device opaque token blobs keyed by `deviceId`, indexed by `WindowGroupID`. Tokens stay on the device that picked them.
+- **TokenBundle**: per-device opaque token blobs keyed by `deviceId`, indexed by `TokenGroupID`. Tokens stay on the device that picked them. **Each token appears in at most one `TokenGroupID` per device**; the picker flow moves a token rather than duplicating it if the parent re-picks it into a different group.
 - **ExtensionRequest**: `id`, `subjectId`, `deviceId`, `windowId`, `appToken`, `createdAt`, `outcome` (`pending` | `denied` | `granted(GrantOverrideID)`), `decidedAt?`, `decidedBy?`. A denial is recorded on the request itself; a grant produces a `GrantOverride` and links it via `outcome`.
 
-**Conflict resolution**: `GrantOverride` and `BlockOverride` are append-only (no conflicts); `ExtensionRequest.outcome` transitions pending -> decided exactly once, enforced by CAS. Schedules/Windows use CloudKit's server-stamped `modificationDate` for LWW and `CKRecordSavePolicy.ifServerRecordUnchanged` for CAS. Server-side timestamps eliminate client-clock-skew issues.
+**Conflict resolution**: `GrantOverride` and `BlockOverride` records are append-only at the CK-record level (each write is a new unique id, so there are no storage conflicts), but they can overlap in time and scope. Resolution rule: for each token `T` on device `D` at the current moment, consider all overrides whose time interval `[start, end)` covers now and whose scope matches `T` (an override matches if its `subjectId` matches `T`'s subject, its `deviceId` is nil or equals `D`, its `groupId` is nil or equals `T`'s group, and its `appToken` is nil or equals `T`). Sort matching overrides by CK server-stamped `modificationDate` descending; the most recent match wins -- grants unshield `T`, blocks shield it. No matches means the schedule's baseline stands. `ExtensionRequest.outcome` still uses CAS to transition pending -> decided exactly once. Schedules/Windows use CloudKit's server-stamped `modificationDate` for LWW and `CKRecordSavePolicy.ifServerRecordUnchanged` for CAS. Server-side timestamps eliminate client-clock-skew issues.
 
 ## Sync Strategy
 
@@ -201,7 +201,7 @@ ScreenTimeScheduler/
      - **Catch-all (all devices)**: the daily 00:01 recovery anchor re-reconciles on the next morning wake, bounding worst-case drift at <24h.
 2. **DAM missed callback**: idempotent re-registration on multiple triggers (see Recovery above).
 3. **Token drift after OS upgrade**: `TokenResolver` verifies tokens against installed app inventory at launch. If tokens are stale, behavior depends on the subject kind:
-   - **Managed child**: the app switches to a blanket category shield (all apps blocked except the enforcement app itself) for the affected window groups, erring on enforcement rather than failing open. The app surfaces a "tokens need refresh" status visible to the child but not actionable by them. The **parent** must re-pick tokens — either by running `FamilyActivityPicker(.child)` on the child's device directly (handed the device) or from their own device via Apple's guardian-context picker flow (iOS 16+, returns tokens valid on the child device). A silent push notifies parent devices that re-pick is needed.
+   - **Managed child**: the app switches to a blanket category shield (all apps blocked except the enforcement app itself) for the affected token groups, erring on enforcement rather than failing open. The app surfaces a "tokens need refresh" status visible to the child but not actionable by them. The **parent** must re-pick tokens — either by running `FamilyActivityPicker(.child)` on the child's device directly (handed the device) or from their own device via Apple's guardian-context picker flow (iOS 16+, returns tokens valid on the child device). A silent push notifies parent devices that re-pick is needed.
    - **Self subject**: the app surfaces a re-pick UI directly; the user runs `FamilyActivityPicker` themselves.
 4. **All parent devices offline**: children enforce from local cache. Edits queue and flush on reconnect.
 5. **Child uninstalls app**: blocked by `.child` FC auth (requires guardian passcode). On macOS, admin credentials required.
@@ -235,7 +235,7 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 1. Install from Xcode.
 2. App launches onboarding: request FamilyControls `.individual` authorization (single in-app prompt, user approves).
 3. Sign in to iCloud (if not already). App creates `ScheduleZone` in CloudKit private DB.
-4. Optionally configure a self-shielding Subject. If so, present `FamilyActivityPicker` to select app groups, then register DAM schedules.
+4. Optionally configure a self-shielding Subject. If so, present `FamilyActivityPicker` to populate each token group, then register DAM schedules.
 5. Register for `CKQuerySubscription` silent pushes (AFMT requests from children).
 6. App requests notification permission for AFMT action notifications.
 
@@ -251,7 +251,7 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 1. Install from Xcode via USB/Wi-Fi.
 2. App launches onboarding: request FamilyControls `.child` authorization. This triggers the standard parent-approval flow — a guardian must enter the Screen Time passcode on the child's device (or approve remotely).
 3. QR-bootstrap handshake: parent scans a QR code displayed on the child device (or vice versa) to exchange CK zone IDs and encryption keys. Then accept `CKShare`.
-4. Present `FamilyActivityPicker(.child)` on the child device to capture token sets per window group. Tokens are device-scoped and stay local.
+4. Present `FamilyActivityPicker(.child)` on the child device to populate each token group. Tokens are device-scoped and stay local.
 5. App registers DAM schedules (one per window) and the daily 00:01--12:00 recovery anchor.
 6. Register for `CKQuerySubscription` silent pushes (override responses from parents).
 7. Onboarding prompts the user to disable Apple's built-in Screen Time Downtime on this device to avoid interference.
