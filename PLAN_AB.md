@@ -1,5 +1,29 @@
 # Screen Time Scheduler
 
+## Contents
+
+- [Context](#context)
+- [Subjects and Roles](#subjects-and-roles)
+- [Architecture](#architecture)
+  - [Two topologies](#two-topologies)
+  - [Optional macOS daemon](#optional-macos-daemon)
+- [Data Model](#data-model)
+- [Sync Strategy](#sync-strategy)
+  - [Runtime triggers](#runtime-triggers)
+- [Ask-For-More-Time (AFMT)](#ask-for-more-time-afmt)
+- [Enforcement Per Device](#enforcement-per-device)
+  - [Platform-specific notes](#platform-specific-notes)
+- [Module Layout](#module-layout)
+- [Required Entitlements](#required-entitlements)
+- [Bootstrap / First Run](#bootstrap--first-run)
+  - [Parent iPhone](#parent-iphone)
+  - [Parent Mac (optional)](#parent-mac-optional)
+  - [Child iPad (iPadOS 26)](#child-ipad-ipados-26)
+  - [Child iMac (macOS 13 Ventura)](#child-imac-macos-13-ventura)
+  - [Annual maintenance](#annual-maintenance)
+- [Failure Modes](#failure-modes)
+- [Open Risks](#open-risks)
+
 ## Context
 
 Apple's FamilyControls / ManagedSettings / DeviceActivity frameworks (RESEARCH section 1) let a third-party app shield apps on a schedule on iOS 16+, iPadOS 16+, and macOS 13+. This project runs on the **development-entitlement path** (RESEARCH section 9): no distribution review, schema mutable forever in Development CloudKit, $99/yr plus one annual reinstall per device.
