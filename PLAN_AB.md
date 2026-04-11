@@ -188,7 +188,9 @@ ScreenTimeScheduler/
 
 ## Failure Modes
 
-1. **CK propagation lag**: silent push + 60s foreground polling fallback while a request is pending.
+1. **CK propagation lag during AFMT round trip**: CloudKit silent pushes typically land in 1--15s but can spike to minutes under server load. Two directions to cover:
+   - **Request push (child → parent)**: child writes an `ExtensionRequest` to CloudKit; parent devices wake via `CKQuerySubscription` to show the action notification. If the push is delayed, parent devices poll for pending requests every 60s while the parent's app is in the foreground (the primary AFMT surface on the parent iPhone is the notification, so foreground polling is a secondary path). The parent Mac daemon (if present) also polls on a deterministic timer.
+   - **Response push (parent → child)**: parent's decision writes an `Override` to CloudKit; child's DAM extension wakes via push to clear the shield. If the push is delayed, the child's main app polls CloudKit every 60s while a shield is active and the app is running. On the child iPad this requires the app to be open; on the child iMac the app is open-at-login, so polling runs continuously. If neither the push nor the polling catches it, the daily 00:01 recovery anchor re-reconciles.
 2. **DAM missed callback**: idempotent re-registration on multiple triggers (see Recovery above).
 3. **Token drift after OS upgrade**: `TokenResolver` verifies tokens against installed app inventory at launch. If tokens are stale, behavior depends on the subject kind:
    - **Managed child**: the app switches to a blanket category shield (all apps blocked except the enforcement app itself) for the affected window groups, erring on enforcement rather than failing open. The app surfaces a "tokens need refresh" status visible to the child but not actionable by them. The **parent** must re-pick tokens — either by running `FamilyActivityPicker(.child)` on the child's device directly (handed the device) or from their own device via Apple's guardian-context picker flow (iOS 16+, returns tokens valid on the child device). A silent push notifies parent devices that re-pick is needed.
