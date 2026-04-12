@@ -30,6 +30,10 @@ git config merge.beads-jsonl.name "Beads JSONL merge driver (newest updated_at w
 git config merge.beads-jsonl.driver \
   "python3 \"$REPO_ROOT/scripts/merge-issues-jsonl.py\" %O %A %B" 2>/dev/null || true
 
+# ── 0c. Set beads role ────────────────────────────────────────────────────
+# Agents use the emclain-agent GitHub identity, which is a contributor.
+git config beads.role contributor 2>/dev/null || true
+
 # ── 1. Pull latest ─────────────────────────────────────────────────────────
 # Must happen first so the agent sees all files (PLAN.md, DESIGN.md, etc.)
 # and the freshest issues.jsonl before populating the local Dolt DB.
