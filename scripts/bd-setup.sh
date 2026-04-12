@@ -22,6 +22,14 @@ if ! git diff --quiet .beads/issues.jsonl 2>/dev/null || \
   git diff --cached --quiet || git commit -m "bd sync: commit local issues.jsonl before pull"
 fi
 
+# ── 0b. Register the issues.jsonl merge driver (idempotent) ──────────────
+# The driver auto-resolves concurrent agent writes by taking newest updated_at
+# per issue ID. Must be configured per-clone; .gitattributes maps the driver.
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+git config merge.beads-jsonl.name "Beads JSONL merge driver (newest updated_at wins)" 2>/dev/null || true
+git config merge.beads-jsonl.driver \
+  "python3 \"$REPO_ROOT/scripts/merge-issues-jsonl.py\" %O %A %B" 2>/dev/null || true
+
 # ── 1. Pull latest ─────────────────────────────────────────────────────────
 # Must happen first so the agent sees all files (PLAN.md, DESIGN.md, etc.)
 # and the freshest issues.jsonl before populating the local Dolt DB.
