@@ -30,6 +30,8 @@ done
 
 # ── 3. Export beads state and push ────────────────────────────────────────
 echo "Syncing beads state..."
+# Ensure .beads has correct perms to avoid bd warnings polluting the export
+chmod 700 .beads 2>/dev/null || true
 bd export > .beads/issues.jsonl
 git add .beads/issues.jsonl
 git diff --cached --quiet || git commit -m "bd sync: update issues.jsonl after $CLAIMED_ID"
