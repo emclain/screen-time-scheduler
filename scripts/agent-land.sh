@@ -61,4 +61,10 @@ git worktree remove --force "$worktree_path"
 git branch -d "work/$CLAIMED_ID" 2>/dev/null || true
 
 echo ""
-echo "Done. Issue $CLAIMED_ID landed and pushed."
+echo "Issue $CLAIMED_ID landed and pushed."
+echo ""
+echo "NEXT (required): Reflect — review for friction, gaps, or follow-up."
+echo "  • Script failed or incomplete → fix in-place"
+echo "  • Docs wrong or missing       → update AGENTS.md"
+echo "  • Needs deeper investigation  → bd create ..."
+echo "Goal: the next agent can run agent-start.sh + agent-land.sh with no manual steps."
