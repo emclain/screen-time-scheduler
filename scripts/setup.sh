@@ -44,7 +44,16 @@ fi
 bd import
 bd list
 
-# ── 4. Install git hooks ──────────────────────────────────────────────────
+# ── 4. Register the issues.jsonl merge driver ────────────────────────────
+# The driver auto-resolves concurrent agent writes by taking newest updated_at
+# per issue ID. The .gitattributes file maps the driver to issues.jsonl.
+echo "Registering beads-jsonl merge driver..."
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+git config merge.beads-jsonl.name "Beads JSONL merge driver (newest updated_at wins)"
+git config merge.beads-jsonl.driver \
+  "python3 \"$REPO_ROOT/scripts/merge-issues-jsonl.py\" %O %A %B"
+
+# ── 5. Install git hooks ──────────────────────────────────────────────────
 echo "Installing git hooks..."
 cp scripts/pre-commit.hook .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
