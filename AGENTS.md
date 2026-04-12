@@ -38,15 +38,22 @@ claiming an issue.
 
 ## Setup (fresh checkout)
 
+For a brand-new checkout (installs `bd` CLI if absent):
+
 ```bash
 bash scripts/setup.sh
 ```
 
-This script: installs the `bd` CLI if absent, pulls latest, initialises the
-beads database, runs `bd import`, and runs `bd list` to confirm the database
-is healthy.
+**At the start of every session** (both ad-hoc and issue work), run:
 
-> **Note:** The Dolt database is runtime state (not in git). `setup.sh` rebuilds
+```bash
+bash scripts/bd-setup.sh
+```
+
+This pulls latest and rebuilds the local beads DB from `issues.jsonl`.
+`agent-start.sh` calls this automatically — ad-hoc agents must call it manually.
+
+> **Note:** The Dolt database is runtime state (not in git). `bd-setup.sh` rebuilds
 > it from `.beads/issues.jsonl` on every fresh checkout or container.
 
 ## Git Policy

@@ -11,18 +11,8 @@
 
 set -euo pipefail
 
-# ── 1. Pull latest before doing anything else ──────────────────────────────
-# This must happen first so the agent sees all files (PLAN.md, DESIGN.md,
-# etc.) that other agents have landed before claiming new work.
-echo "Pulling latest from origin..."
-git pull --no-rebase origin main
-
-# ── 2. Ensure bd is initialised ────────────────────────────────────────────
-if ! bd list &>/dev/null 2>&1; then
-  echo "Initialising beads database..."
-  bd init --force --prefix screen
-  bd import
-fi
+# ── 1–2. Pull latest and initialise beads DB ──────────────────────────────
+bash "$(dirname "$0")/bd-setup.sh"
 
 # ── 3. Claim the highest-priority available issue ──────────────────────────
 claimed=""
