@@ -58,6 +58,29 @@ git fetch origin
 git merge origin/<branch>   # not git rebase
 ```
 
+### Pushing to GitHub
+
+If `git push` fails with authentication or "no remote" errors, check whether credentials
+are available in the environment before giving up:
+
+```bash
+# Check for GitHub token
+echo $GITHUB_TOKEN
+echo $GH_TOKEN
+
+# Check for configured remote
+git remote -v
+
+# If token exists but remote is missing, configure it:
+git remote add origin https://${GITHUB_TOKEN}@github.com/<owner>/<repo>.git
+# or for GH_TOKEN:
+git remote set-url origin https://${GH_TOKEN}@github.com/<owner>/<repo>.git
+```
+
+If credentials exist, use them to push. If no credentials are available and no remote
+is configured, ask the user to pull the changes locally and use the Merge workflow
+to integrate them.
+
 ## Issue Workflow
 
 Each agent works on **exactly one issue**, then stops.
