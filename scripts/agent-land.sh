@@ -10,6 +10,14 @@
 set -euo pipefail
 
 if [ -z "${CLAIMED_ID:-}" ]; then
+  if [ -f ".agent-env" ]; then
+    # Auto-source when run without a prior `source .agent-env`
+    # shellcheck source=.agent-env
+    source ".agent-env"
+  fi
+fi
+
+if [ -z "${CLAIMED_ID:-}" ]; then
   echo "ERROR: CLAIMED_ID is not set. Did you source .agent-env?" >&2
   exit 1
 fi
