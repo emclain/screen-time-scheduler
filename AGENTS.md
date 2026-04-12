@@ -8,6 +8,8 @@ Use [Beads](https://github.com/steveyegge/beads) (`bd`) for all issue tracking â
 
 If you hit a blocking problem, file it as a bead rather than context-switching to fix it.
 
+**Agent workflow health outranks project progress.** If you find a broken script, missing step, or unclear instruction in the agent workflow, fix it and file any follow-up beads at priority 1 (high) before continuing project work. A workflow defect affects every future agent; a project task only affects this issue.
+
 # Agent Instructions
 
 ## Two modes
