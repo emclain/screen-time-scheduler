@@ -26,15 +26,18 @@ This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get sta
 
 Agents are used in two ways:
 
-- **Ad-hoc** — investigate, plan, answer a question, or do a focused task that
-  doesn't map to an existing issue. Read this file for context, then wait for
-  instructions. The Workflow section below does not apply.
+- **Ad-hoc** — investigate, plan, answer a question, or do a focused task
+  directed by the user. Does not autonomously claim issues. Follows the
+  Ad-hoc Workflow below.
 
-- **Issue work** — claim an open issue, implement it, and land it. Follow the
-  Workflow section below.
+- **Issue work** — claim an open issue, implement it, and land it. Follows the
+  Issue Workflow below.
 
 If you're not sure which mode you're in, wait for instructions rather than
 claiming an issue.
+
+Both modes share the same **Land** and **Reflect** obligations — all changes
+must be committed and pushed before stopping.
 
 ## Setup (fresh checkout)
 
@@ -44,17 +47,49 @@ For a brand-new checkout (installs `bd` CLI if absent):
 bash scripts/setup.sh
 ```
 
-**At the start of every session** (both ad-hoc and issue work), run:
+## Ad-hoc Workflow
+
+### 1. Start
 
 ```bash
 bash scripts/bd-setup.sh
 ```
 
-This pulls latest and rebuilds the local beads DB from `issues.jsonl`.
-`agent-start.sh` calls this automatically — ad-hoc agents must call it manually.
+This pulls latest from `origin/main` and rebuilds the local beads DB from
+`issues.jsonl`. Then wait for instructions.
 
-> **Note:** The Dolt database is runtime state (not in git). `bd-setup.sh` rebuilds
-> it from `.beads/issues.jsonl` on every fresh checkout or container.
+### 2. Work
+
+Do the directed work. Stay narrowly focused on what was asked. If you notice
+related problems or tempting tangents, file a bead and move on.
+
+```bash
+git add <files>
+git commit -m "<message>"
+```
+
+### 3. Land
+
+File beads for anything you noticed but didn't work on:
+
+```bash
+bd create --title="..." --type=task --priority=<n>
+```
+
+Export beads state and push everything:
+
+```bash
+bd export > .beads/issues.jsonl
+git add .beads/issues.jsonl
+git diff --cached --quiet || git commit -m "bd sync: <description>"
+git fetch origin main
+git merge origin/main
+git push
+```
+
+### 4. Reflect
+
+Same obligations as Issue Workflow step 4 — see below.
 
 ## Git Policy
 
@@ -106,8 +141,10 @@ cd <your screen-time-scheduler checkout>
 bash scripts/agent-start.sh
 ```
 
-The script pulls from `origin/main` first, then claims the highest-priority
-available issue and creates an isolated git worktree for it. If it prints
+(`agent-start.sh` calls `bd-setup.sh` automatically — no need to run it separately.)
+
+The script pulls from `origin/main`, claims the highest-priority available
+issue, and creates an isolated git worktree for it. If it prints
 "No available work", stop.
 
 Then source the environment file — this must be done in your shell so that
