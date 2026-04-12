@@ -1,64 +1,35 @@
 # Goals
 
-See [RESEARCH.md](RESEARCH.md) for the overall goals, scope, and background
-of this project.
+See [RESEARCH.md](RESEARCH.md) for goals, scope, and background.
 
 # Work Tracking
 
-As a work tracking system, we use Beads (see instructions below)
-https://github.com/steveyegge/beads
-instead of unstructured markdown or Claude memory files. Start with a
-plan and work your way through breaking it down into smaller pieces,
-filing beads as you go.
+Use [Beads](https://github.com/steveyegge/beads) (`bd`) for all issue tracking — not markdown files or Claude memory. File beads as you go, work in small bites, and push without prompting. When approaching context limits, prefer filing beads and stopping over compacting.
 
-If you find issues impeding your work, file them as beads rather than
-context switching to try to fix them.
-
-Work in small bites, file beads as you go, and push your changes
-without my prompting. When you reach the end of your context window,
-prefer to use beads as your memory and quit rather than compacting.
+If you hit a blocking problem, file it as a bead rather than context-switching to fix it.
 
 # Agent Instructions
 
-This project uses **bd** (beads) for issue tracking. Run `bd onboard` to get started.
-
 ## Two modes
 
-Agents are used in two ways:
+- **Ad-hoc** — directed by the user; does not autonomously claim issues. Follows the Ad-hoc Workflow below.
+- **Issue work** — claims an open issue, implements it, lands it. Follows the Issue Workflow below.
 
-- **Ad-hoc** — investigate, plan, answer a question, or do a focused task
-  directed by the user. Does not autonomously claim issues. Follows the
-  Ad-hoc Workflow below.
+If unsure which mode you're in, wait for instructions before claiming anything.
 
-- **Issue work** — claim an open issue, implement it, and land it. Follows the
-  Issue Workflow below.
-
-If you're not sure which mode you're in, wait for instructions rather than
-claiming an issue.
-
-Both modes share the same **Land** and **Reflect** obligations — all changes
-must be committed and pushed before stopping.
+Both modes share the same **Land** and **Reflect** obligations — all changes must be committed and pushed before stopping.
 
 ## Setup (fresh checkout)
 
-For a brand-new checkout (installs `bd` CLI if absent):
-
 ```bash
-bash scripts/setup.sh
+bash scripts/setup.sh   # installs bd CLI if absent
 ```
 
 ## Beads state and `main`
 
-`.beads/issues.jsonl` on `main` is the **canonical beads database** shared by
-all agents, whether running in worktrees, fresh checkouts, or containers.
+`.beads/issues.jsonl` on `main` is the **canonical beads database** shared by all agents — worktrees, fresh checkouts, and containers all rebuild from it. The Dolt DB is runtime state and is never committed to git.
 
-`bd-setup.sh` rebuilds the local Dolt DB from this file at the start of every
-session. The Dolt DB itself is runtime state and is never committed to git.
-
-**This means every `bd export` must land on `main`.** An export committed only
-to a feature branch is invisible to other agents until it merges. Both workflows
-below ensure this: ad-hoc agents work directly on `main`; issue-work agents
-push their export commit via `work/<id>:main` in `agent-land.sh`.
+**Every `bd export` must land on `main`.** An export on a feature branch is invisible to other agents until merged. Both workflows below guarantee this: ad-hoc agents work on `main` directly; issue-work agents push via `work/<id>:main`.
 
 ## Ad-hoc Workflow
 
@@ -68,13 +39,11 @@ push their export commit via `work/<id>:main` in `agent-land.sh`.
 bash scripts/bd-setup.sh
 ```
 
-This pulls latest from `origin/main` and rebuilds the local beads DB from
-`issues.jsonl`. Then wait for instructions.
+Pulls `origin/main` and rebuilds the local beads DB. Then wait for instructions.
 
 ### 2. Work
 
-Do the directed work. Stay narrowly focused on what was asked. If you notice
-related problems or tempting tangents, file a bead and move on.
+Stay narrowly focused on what was asked. File a bead for anything noticed but out of scope, then move on.
 
 ```bash
 git add <files>
@@ -83,98 +52,72 @@ git commit -m "<message>"
 
 ### 3. Land
 
-File beads for anything you noticed but didn't work on:
+File beads for follow-up work, then export and push:
 
 ```bash
-bd create --title="..." --type=task --priority=<n>
-```
+bd create --title="..." --type=task --priority=<n>   # repeat as needed
 
-Export beads state and push everything:
-
-```bash
 bd export > .beads/issues.jsonl
 git add .beads/issues.jsonl
 git diff --cached --quiet || git commit -m "bd sync: <description>"
-git fetch origin main
-git merge origin/main
+git fetch origin main && git merge origin/main
 git push
 ```
 
 ### 4. Reflect
 
-Same obligations as Issue Workflow step 4 — see below.
+Review for friction, gaps, or follow-up. For every issue encountered:
+
+- **Script failed or incomplete** → fix it in-place
+- **Docs wrong or missing** → update this file
+- **Needs deeper investigation** → file a bead
 
 ## Git Policy
 
-**Never rebase.** Always use merge to integrate changes between branches. Rebase rewrites history and creates problems when branches are shared.
+**Never rebase.** Always merge.
 
 ```bash
 git fetch origin
-git merge origin/<branch>   # not git rebase
+git merge origin/<branch>
 ```
 
 ### Pushing to GitHub
 
-If `git push` fails with authentication or "no remote" errors, check whether credentials
-are available in the environment before giving up:
+If `git push` fails with auth or "no remote" errors:
 
 ```bash
-# Check for GitHub token
-echo $GITHUB_TOKEN
-echo $GH_TOKEN
+echo $GITHUB_TOKEN; echo $GH_TOKEN   # check for credentials
+git remote -v                         # check remote
 
-# Check for configured remote
-git remote -v
-
-# If token exists but remote is missing, configure it:
+# If token exists but remote is missing:
 git remote add origin https://${GITHUB_TOKEN}@github.com/<owner>/<repo>.git
-# or for GH_TOKEN:
-git remote set-url origin https://${GH_TOKEN}@github.com/<owner>/<repo>.git
 ```
 
-If credentials exist, use them to push. If no credentials are available and no remote
-is configured, ask the user to pull the changes locally and use the Merge workflow
-to integrate them.
+If no credentials exist, ask the user to pull and integrate locally.
 
 ## Issue Workflow
 
 Each agent works on **exactly one issue**, then stops.
 
-> **⚠️ CRITICAL: Always pull before claiming**
->
-> Before claiming any work, you MUST have the latest code from `origin/main`.
-> Use `agent-start.sh` — it handles this automatically. If you manually run
-> `bd update <id> --claim` without pulling first, you will work on stale code
-> and create merge conflicts or duplicate work.
+> **⚠️ Always pull before claiming.** Use `agent-start.sh` — it handles this. Running `bd update <id> --claim` manually risks stale code and merge conflicts.
 
 ### 1. Start
 
 ```bash
-cd <your screen-time-scheduler checkout>
+cd <checkout>
 bash scripts/agent-start.sh
-```
-
-(`agent-start.sh` calls `bd-setup.sh` automatically — no need to run it separately.)
-
-The script pulls from `origin/main`, claims the highest-priority available
-issue, and creates an isolated git worktree for it. If it prints
-"No available work", stop.
-
-Then source the environment file — this must be done in your shell so that
-`CLAIMED_ID` is available to subsequent commands:
-
-```bash
 source .agent-env
 ```
+
+Pulls `origin/main`, claims the highest-priority available issue, and creates a git worktree. If "No available work", stop.
 
 ### 2. Work
 
 ```bash
-bd show $CLAIMED_ID   # review the issue
+bd show $CLAIMED_ID
 ```
 
-Do the work. Stay narrowly focused on what the issue describes. If you notice
-related problems or tempting tangents, file a bead and move on.
+Stay narrowly focused on what the issue describes. File a bead for anything noticed but out of scope, then move on.
 
 ```bash
 git add <files>
@@ -183,60 +126,26 @@ git commit -m "<message>"
 
 ### 3. Land
 
-File beads for anything you noticed but didn't work on:
+File beads for follow-up work, then run the landing script:
 
 ```bash
-bd create --title="..." --type=task --priority=<n>
-```
-
-Then run the landing script:
-
-```bash
+bd create --title="..." --type=task --priority=<n>   # repeat as needed
 bash scripts/agent-land.sh
 ```
 
-This script: closes the issue, pushes via a fetch-merge-retry loop, exports
-beads state, commits and pushes that, then removes the worktree. Work is not
-complete until `git push` succeeds — the script handles retries.
+The script closes the issue, merges and pushes to `main` with retries, exports beads state, commits and pushes it, then removes the worktree.
 
 ### 4. Reflect
 
-Before stopping, review the session for friction, gaps, or follow-up work.
-This step is **not optional**.
+Same obligations as Ad-hoc step 4. The goal: the next agent should be able to run `agent-start.sh`, do their work, and run `agent-land.sh` with no manual intervention.
 
-For every issue encountered (missing steps, unclear instructions, new edge cases):
-
-- **If a script failed or was incomplete:** fix it in-place.
-- **If instructions in this file were wrong or missing:** update them.
-- **If the fix requires deeper investigation:** file a bead instead.
-
-The goal: the next agent should be able to run `bash scripts/agent-start.sh`,
-do their work, and run `bash scripts/agent-land.sh` with no manual intervention.
-
-**Stop after one issue.** Do not loop back to claim another.
+**Stop after one issue.**
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
-## Beads Issue Tracker
+## Beads Reference
 
-This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
-
-### Quick Reference
-
-```bash
-bd ready              # Find available work (info only)
-bd show <id>          # View issue details
-bd close <id>         # Complete work
-```
-
-> **Do NOT manually run `bd update <id> --claim`** — use `agent-start.sh` instead.
-> It pulls latest code first, preventing stale-branch issues.
-
-### Rules
-
-- Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
-- Run `bd prime` for detailed command reference and session close protocol
-- Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
-
-> **Note:** `bd dolt push` always fails in this environment — no dolt remote is configured.
-> Use `bd export > .beads/issues.jsonl` + git commit + push instead (handled by `agent-land.sh`).
+- Use `bd` for ALL task tracking — not TodoWrite, TaskCreate, or markdown
+- Use `bd remember` for persistent knowledge — not MEMORY.md files
+- `bd dolt push` always fails here — export via git instead (both scripts handle this)
+- Run `bd prime` for full command reference
 <!-- END BEADS INTEGRATION -->
