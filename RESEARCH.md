@@ -54,6 +54,28 @@ Two viable strategies:
 - A third-party Family Controls app installed on the parent's device can present `FamilyActivityPicker(.child)` to pick apps for the child, but tokens returned must be transmitted to the child device, where a sibling app must be installed and approved. Apple does **not** provide a transport — developers use CloudKit, APNs, or a backend.
 - For a parent → child shield to take effect, the same app must be installed on the child device and registered with Family Controls authorization `.child`.
 
+### 4.1 CKShare behavior with child Apple IDs (under-13)
+
+**Research finding (April 2026):** Despite multiple internal document references claiming "known CKShare-to-child quirks," no specific, documented Apple restriction on CKShare for child Apple IDs under 13 was found in Apple Developer Forums, official documentation, or developer blog posts.
+
+**What IS documented:**
+- **Sign in with Apple** is explicitly blocked for accounts under 13 (COPPA compliance). This does NOT affect CKShare.
+- **Two-factor authentication** cannot be fully configured on child accounts, but this affects Sign in with Apple, not CloudKit sharing.
+- **CKShare general limitations** exist (5,000 record hard limit at share creation time, recommended 200), but these apply to all accounts equally.
+- **CKAcceptSharesOperation errors** (e.g., "Couldn't get a Sharing identity set") occur sporadically for all users, not specifically child accounts. These are typically transient or related to iCloud account setup issues.
+
+**What is NOT documented:**
+- No Apple documentation states that CKShare invitations fail or behave differently for under-13 child Apple IDs.
+- No Developer Forum threads describe CKShare-specific failures tied to child account age.
+- Apple's Family Privacy Disclosure explicitly states children "can create and share documents and data with other people through iCloud public and private sharing."
+
+**Conclusion:** The QR-bootstrap-first design in PLAN_AB is **not** justified by documented CKShare restrictions. The design may still be useful for UX reasons (QR is simpler than email-based share links for young children), but the "unreliable CKShare-to-child" rationale appears unfounded. Testing with an actual under-13 child account in the Development CloudKit environment should confirm whether any undocumented restrictions exist.
+
+**References:**
+- Apple Family Privacy Disclosure: https://www.apple.com/legal/privacy/en-ww/parent-disclosure/
+- Sign in with Apple restrictions: https://support.apple.com/en-us/102609
+- CKShare documentation: https://developer.apple.com/documentation/cloudkit/ckshare
+
 ## 5. State of Third-Party Apps
 - **Jomo**, **Opal**, **ScreenZen**, **One Sec**, **Brick**: actively maintained focus/blocker apps using FamilyControls. None offer multi-window Downtime *with* Apple's native Ask-for-More-Time. Most replace shields with their own.
 - **ScreenBreak** (open source, github.com/christianp-622/ScreenBreak): reference iOS-16 implementation of the three frameworks.
@@ -113,7 +135,7 @@ CloudKit containers exist in two parallel environments — **Development** and *
 Implications for this project:
 - Development CloudKit is created automatically with the container; no "deploy" step is required.
 - Schema is **mutable forever** in Development — record types, fields, and indexes can be added, removed, or renamed at any time, even with running production users. Production schema, by contrast, is append-only.
-- All CloudKit features behave identically in Development: private database, `CKShare` invitations to a child Apple ID, `CKQuerySubscription` silent pushes that wake `DeviceActivityMonitor` extensions, conflict resolution, etc. The under-13 CKShare quirks RESEARCH §4 mentions exist in both environments equally.
+- All CloudKit features behave identically in Development: private database, `CKShare` invitations to a child Apple ID, `CKQuerySubscription` silent pushes that wake `DeviceActivityMonitor` extensions, conflict resolution, etc. No documented CKShare restrictions exist for child Apple IDs (see §4.1).
 - The CloudKit Dashboard (`icloud.developer.apple.com/dashboard`) exposes the Development environment for browsing records, editing the schema, and inspecting subscription deliveries — useful for debugging without instrumentation in the app itself.
 - Quotas on Development are well above what a household-scale schedule store will ever consume.
 
