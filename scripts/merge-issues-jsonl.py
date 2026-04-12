@@ -43,10 +43,56 @@ def load_jsonl(path):
     return issues, order
 
 
+def is_claimed(issue):
+    """Return True if the issue is in a claimed/in-progress state."""
+    return issue.get("status") == "in_progress"
+
+
+def detect_double_claim(ancestor, ours, theirs):
+    """
+    Return a list of issue IDs where both sides independently claimed the same
+    issue. A double-claim is when:
+      - ancestor status is NOT in_progress (issue was open/available)
+      - ours status IS in_progress
+      - theirs status IS in_progress
+      - ours and theirs have different assignees
+    """
+    conflicts = []
+    for issue_id in set(ours) & set(theirs):
+        our_issue = ours[issue_id]
+        their_issue = theirs[issue_id]
+        anc_issue = ancestor.get(issue_id, {})
+
+        anc_claimed = is_claimed(anc_issue)
+        our_claimed = is_claimed(our_issue)
+        their_claimed = is_claimed(their_issue)
+
+        if not anc_claimed and our_claimed and their_claimed:
+            our_assignee = our_issue.get("assignee")
+            their_assignee = their_issue.get("assignee")
+            if our_assignee != their_assignee:
+                conflicts.append(issue_id)
+
+    return conflicts
+
+
 def merge(ancestor_path, ours_path, theirs_path):
     ancestor, anc_order = load_jsonl(ancestor_path)
     ours, our_order = load_jsonl(ours_path)
     theirs, their_order = load_jsonl(theirs_path)
+
+    # Detect double-claims before merging
+    double_claims = detect_double_claim(ancestor, ours, theirs)
+    if double_claims:
+        for issue_id in double_claims:
+            our_assignee = ours[issue_id].get("assignee", "<unknown>")
+            their_assignee = theirs[issue_id].get("assignee", "<unknown>")
+            print(
+                f"CONFLICT: double-claim on {issue_id} — "
+                f"ours={our_assignee}, theirs={their_assignee}",
+                file=sys.stderr,
+            )
+        return 1
 
     # Stable ordering: start with ours order, append any new IDs from theirs
     all_ids = list(our_order)
