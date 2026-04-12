@@ -1,0 +1,1015 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4C4014B0909249D2B1F00446 /* ScreenTimeSchedulerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4174E72D0E4A62B764769D; };
+		6F28E10A8D4447399BD2BABA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C452902C4F4B85998D2FD7; };
+		87998F1E31C24165B3E95757 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 939B19C03398490191BAB942; };
+		5BE1D506AE9A422A8EB9B024 /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104A32AB95845B5B00629DB; };
+		7D0314A548534BD098BB557E /* ScreenTimeSchedulerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC61E12B322401EA720DEB5; };
+		FBB3363F729D48DD81EDE5D2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B0EE22D9F142138615FC10; };
+		4F82A062A67E46B596602E51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF561B1F3E1B415F9F26C52B; };
+		DE34327CE9B249C0B523E4DB /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104A32AB95845B5B00629DB; };
+		CC3815A3150C40A284CF8924 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76F601F861147928B04CBA2; };
+		03D8891293F9419BA6DF8016 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD7926D78C1849538D671F03; };
+		CE73EFC2A3024140B2B54840 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F063CEC067466F842A8D89; };
+		928F3D7473A9441DABE2295B /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 500276BD97454FEF8AA920CF; };
+		7064CA779B094BCEBCF3F828 /* ShieldConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E447121ECF648BD98A9A117; };
+		B38F558FA57F4D6993BD7D8C /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4E45D5FC5B26458C8F800217; };
+		B439A4B45E2343238AC57659 /* ShieldConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DEC2A2D18164F7D87B6F6B0; };
+		D500D517CE0940C7A16A4BF5 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 9DAEAEAAC21B46BE83E63A84; };
+		C5809883234A4ACDB43DE2BB /* ShieldActionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C73FBF2DBC54D45B6C31D6A; };
+		5BA56951351140188C93B096 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 22E16B0F96A944E3AF3C9DA7; };
+		80B7C99C9DD948E485F7EB12 /* ShieldActionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8E2898DAE94F89A823D065; };
+		60F1E5E0EBF8402A905719BA /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 661AE5A1045043119A6E0522; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AD4174E72D0E4A62B764769D /* ScreenTimeSchedulerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScreenTimeSchedulerApp.swift; path = App/iOS/ScreenTimeSchedulerApp.swift; sourceTree = "<group>"; };
+		C5C452902C4F4B85998D2FD7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = App/iOS/ContentView.swift; sourceTree = "<group>"; };
+		6B11F6F58673411CA32A982C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = App/iOS/Info.plist; sourceTree = "<group>"; };
+		4659980049C64870B111FADB /* ScreenTimeScheduler.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ScreenTimeScheduler.entitlements; path = App/iOS/ScreenTimeScheduler.entitlements; sourceTree = "<group>"; };
+		939B19C03398490191BAB942 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = App/iOS/Assets.xcassets; sourceTree = "<group>"; };
+		3EC61E12B322401EA720DEB5 /* ScreenTimeSchedulerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScreenTimeSchedulerApp.swift; path = App/macOS/ScreenTimeSchedulerApp.swift; sourceTree = "<group>"; };
+		F0B0EE22D9F142138615FC10 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = App/macOS/ContentView.swift; sourceTree = "<group>"; };
+		3ACDC1B04EE0458EA96F65B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = App/macOS/Info.plist; sourceTree = "<group>"; };
+		9343B34B0E4B475F86ED37EE /* ScreenTimeSchedulerMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ScreenTimeSchedulerMac.entitlements; path = App/macOS/ScreenTimeSchedulerMac.entitlements; sourceTree = "<group>"; };
+		BF561B1F3E1B415F9F26C52B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = App/macOS/Assets.xcassets; sourceTree = "<group>"; };
+		5104A32AB95845B5B00629DB /* Placeholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Placeholder.swift; path = Core/Placeholder.swift; sourceTree = "<group>"; };
+		D76F601F861147928B04CBA2 /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeviceActivityMonitorExtension.swift; path = Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
+		CD7926D78C1849538D671F03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/DeviceActivityMonitorExtension/iOS/Info.plist; sourceTree = "<group>"; };
+		88E5ACD9028E4918B371F96B /* DeviceActivityMonitorExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = DeviceActivityMonitorExtension.entitlements; path = Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.entitlements; sourceTree = "<group>"; };
+		B1F063CEC067466F842A8D89 /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeviceActivityMonitorExtension.swift; path = Extensions/DeviceActivityMonitorExtension/macOS/DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
+		500276BD97454FEF8AA920CF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/DeviceActivityMonitorExtension/macOS/Info.plist; sourceTree = "<group>"; };
+		87F2FC2C2B6F498DABCFC1E9 /* DeviceActivityMonitorExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = DeviceActivityMonitorExtension.entitlements; path = Extensions/DeviceActivityMonitorExtension/macOS/DeviceActivityMonitorExtension.entitlements; sourceTree = "<group>"; };
+		4E447121ECF648BD98A9A117 /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShieldConfigurationExtension.swift; path = Extensions/ShieldConfigurationExtension/iOS/ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
+		4E45D5FC5B26458C8F800217 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/ShieldConfigurationExtension/iOS/Info.plist; sourceTree = "<group>"; };
+		EF1B9B1956704F6BAFE8FC42 /* ShieldConfigurationExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ShieldConfigurationExtension.entitlements; path = Extensions/ShieldConfigurationExtension/iOS/ShieldConfigurationExtension.entitlements; sourceTree = "<group>"; };
+		3DEC2A2D18164F7D87B6F6B0 /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShieldConfigurationExtension.swift; path = Extensions/ShieldConfigurationExtension/macOS/ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
+		9DAEAEAAC21B46BE83E63A84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/ShieldConfigurationExtension/macOS/Info.plist; sourceTree = "<group>"; };
+		DA806227C2854D35B23F4F1C /* ShieldConfigurationExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ShieldConfigurationExtension.entitlements; path = Extensions/ShieldConfigurationExtension/macOS/ShieldConfigurationExtension.entitlements; sourceTree = "<group>"; };
+		3C73FBF2DBC54D45B6C31D6A /* ShieldActionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShieldActionExtension.swift; path = Extensions/ShieldActionExtension/iOS/ShieldActionExtension.swift; sourceTree = "<group>"; };
+		22E16B0F96A944E3AF3C9DA7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/ShieldActionExtension/iOS/Info.plist; sourceTree = "<group>"; };
+		7E013AD321AD4059AE36D179 /* ShieldActionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ShieldActionExtension.entitlements; path = Extensions/ShieldActionExtension/iOS/ShieldActionExtension.entitlements; sourceTree = "<group>"; };
+		8F8E2898DAE94F89A823D065 /* ShieldActionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShieldActionExtension.swift; path = Extensions/ShieldActionExtension/macOS/ShieldActionExtension.swift; sourceTree = "<group>"; };
+		661AE5A1045043119A6E0522 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/ShieldActionExtension/macOS/Info.plist; sourceTree = "<group>"; };
+		BE29BF90BE0C4ADCB2EDAB0A /* ShieldActionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ShieldActionExtension.entitlements; path = Extensions/ShieldActionExtension/macOS/ShieldActionExtension.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		45E0DEC4BD04403DA38CF9BF = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		71A80CC0E5F54DF5B2DB7ED5 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E53AD137BB7442D0ACB3BEC7 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		583B777CFCB94EC786C2F159 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D46B29C115254F5189214D37 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5B05DBB756964778B0CD8921 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D41569CEA9F54E06BA76C408 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3547FEF300F14E15828B0CE0 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = ();
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E08F779C0E2C4DF0833D9B6E = {
+			isa = PBXGroup;
+			children = (
+				5104A32AB95845B5B00629DB,
+			);
+			path = "ScreenTimeScheduler/Core";
+			name = "Core";
+			sourceTree = "<group>";
+		};
+		38E90C3A7E434B61AC90F68A = {
+			isa = PBXGroup;
+			children = (
+				D76F601F861147928B04CBA2,
+				CD7926D78C1849538D671F03,
+				88E5ACD9028E4918B371F96B,
+			);
+			path = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/iOS";
+			name = "iOS";
+			sourceTree = "<group>";
+		};
+		8E06191D08B04C0994AE6EB4 = {
+			isa = PBXGroup;
+			children = (
+				B1F063CEC067466F842A8D89,
+				500276BD97454FEF8AA920CF,
+				87F2FC2C2B6F498DABCFC1E9,
+			);
+			path = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/macOS";
+			name = "macOS";
+			sourceTree = "<group>";
+		};
+		A8ECC54F632F47F88B08A1F5 = {
+			isa = PBXGroup;
+			children = (
+				38E90C3A7E434B61AC90F68A,
+				8E06191D08B04C0994AE6EB4,
+			);
+			path = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension";
+			name = "DeviceActivityMonitorExtension";
+			sourceTree = "<group>";
+		};
+		9203E91186C0479FA75D90EA = {
+			isa = PBXGroup;
+			children = (
+				4E447121ECF648BD98A9A117,
+				4E45D5FC5B26458C8F800217,
+				EF1B9B1956704F6BAFE8FC42,
+			);
+			path = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/iOS";
+			name = "iOS";
+			sourceTree = "<group>";
+		};
+		02D4F72F83704519808487B3 = {
+			isa = PBXGroup;
+			children = (
+				3DEC2A2D18164F7D87B6F6B0,
+				9DAEAEAAC21B46BE83E63A84,
+				DA806227C2854D35B23F4F1C,
+			);
+			path = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/macOS";
+			name = "macOS";
+			sourceTree = "<group>";
+		};
+		520B4618E04E4B9A8A56FD32 = {
+			isa = PBXGroup;
+			children = (
+				9203E91186C0479FA75D90EA,
+				02D4F72F83704519808487B3,
+			);
+			path = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension";
+			name = "ShieldConfigurationExtension";
+			sourceTree = "<group>";
+		};
+		7C18E09E874B45008734294E = {
+			isa = PBXGroup;
+			children = (
+				3C73FBF2DBC54D45B6C31D6A,
+				22E16B0F96A944E3AF3C9DA7,
+				7E013AD321AD4059AE36D179,
+			);
+			path = "ScreenTimeScheduler/Extensions/ShieldActionExtension/iOS";
+			name = "iOS";
+			sourceTree = "<group>";
+		};
+		48A751ECFCC54047B1B4B34D = {
+			isa = PBXGroup;
+			children = (
+				8F8E2898DAE94F89A823D065,
+				661AE5A1045043119A6E0522,
+				BE29BF90BE0C4ADCB2EDAB0A,
+			);
+			path = "ScreenTimeScheduler/Extensions/ShieldActionExtension/macOS";
+			name = "macOS";
+			sourceTree = "<group>";
+		};
+		6DDB56133FB740528BA98043 = {
+			isa = PBXGroup;
+			children = (
+				7C18E09E874B45008734294E,
+				48A751ECFCC54047B1B4B34D,
+			);
+			path = "ScreenTimeScheduler/Extensions/ShieldActionExtension";
+			name = "ShieldActionExtension";
+			sourceTree = "<group>";
+		};
+		DD54525F6D3A44B1869A0F88 = {
+			isa = PBXGroup;
+			children = (
+				A8ECC54F632F47F88B08A1F5,
+				520B4618E04E4B9A8A56FD32,
+				6DDB56133FB740528BA98043,
+			);
+			path = "ScreenTimeScheduler/Extensions";
+			name = "Extensions";
+			sourceTree = "<group>";
+		};
+		0AA704E402AD4F4AB2365E88 = {
+			isa = PBXGroup;
+			children = (
+				AD4174E72D0E4A62B764769D,
+				C5C452902C4F4B85998D2FD7,
+				939B19C03398490191BAB942,
+				6B11F6F58673411CA32A982C,
+				4659980049C64870B111FADB,
+			);
+			path = "ScreenTimeScheduler/App/iOS";
+			name = "iOS";
+			sourceTree = "<group>";
+		};
+		E43E6B4078A143039C570986 = {
+			isa = PBXGroup;
+			children = (
+				3EC61E12B322401EA720DEB5,
+				F0B0EE22D9F142138615FC10,
+				BF561B1F3E1B415F9F26C52B,
+				3ACDC1B04EE0458EA96F65B9,
+				9343B34B0E4B475F86ED37EE,
+			);
+			path = "ScreenTimeScheduler/App/macOS";
+			name = "macOS";
+			sourceTree = "<group>";
+		};
+		BE2808DB548A48048D5A619C = {
+			isa = PBXGroup;
+			children = (
+				0AA704E402AD4F4AB2365E88,
+				E43E6B4078A143039C570986,
+			);
+			path = "ScreenTimeScheduler/App";
+			name = "App";
+			sourceTree = "<group>";
+		};
+		24E7C32632674AC3AFC03DEE = {
+			isa = PBXGroup;
+			children = (
+				BE2808DB548A48048D5A619C,
+				E08F779C0E2C4DF0833D9B6E,
+				DD54525F6D3A44B1869A0F88,
+			);
+			path = "ScreenTimeScheduler";
+			name = "ScreenTimeScheduler";
+			sourceTree = "<group>";
+		};
+		F1DC135D192B4463B40CD998 = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = "Products";
+			sourceTree = "<group>";
+		};
+		33AEEEBA733B43268D89A464 = {
+			isa = PBXGroup;
+			children = (
+				24E7C32632674AC3AFC03DEE,
+				F1DC135D192B4463B40CD998,
+			);
+			name = "ScreenTimeScheduler";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CB6E30357CC64D93876588AF /* ScreenTimeScheduler */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8C68E1E0C8724D99ADE687EC;
+			buildPhases = (
+				FEE797CC14CB4A0083B2B42A,
+				9B5C9C83AE0C445FA0AB4EFE,
+				45E0DEC4BD04403DA38CF9BF,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "ScreenTimeScheduler";
+			productName = "ScreenTimeScheduler";
+			productType = "com.apple.product-type.application";
+		};
+		ACC3426BDAE14905A6B796B0 /* ScreenTimeSchedulerMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F2C1FA8D9F14477CB7A11949;
+			buildPhases = (
+				E5DE830CDDDD49209B21FBB5,
+				5A7733BEB2A74B3F9E49EC58,
+				71A80CC0E5F54DF5B2DB7ED5,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "ScreenTimeSchedulerMac";
+			productName = "ScreenTimeSchedulerMac";
+			productType = "com.apple.product-type.application";
+		};
+		735ABB72B9994B179DFB3185 /* DeviceActivityMonitorExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A02B561E74FF4A778E04E7B5;
+			buildPhases = (
+				A16A8A8C3F9D4EB89AE88572,
+				32072621C695452E9941C84C,
+				E53AD137BB7442D0ACB3BEC7,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "DeviceActivityMonitorExtension";
+			productName = "DeviceActivityMonitorExtension";
+			productType = "com.apple.product-type.extensionkit.extension";
+		};
+		0C440A8E9E8B41C19164FB07 /* DeviceActivityMonitorExtensionMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 42B1BF07AEBE4D0E8C7F9CEA;
+			buildPhases = (
+				FEF87DCEACF9493FA59FECC5,
+				7ADD39299FDA4067B6F7FAC3,
+				583B777CFCB94EC786C2F159,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "DeviceActivityMonitorExtensionMac";
+			productName = "DeviceActivityMonitorExtensionMac";
+			productType = "com.apple.product-type.extensionkit.extension";
+		};
+		D6563399BB704474AF33FA7B /* ShieldConfigurationExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0B7945AE83E4A7E847DCD81;
+			buildPhases = (
+				2138C097223046F18CA0398A,
+				CCEDAB6DE1BA4016B698499A,
+				D46B29C115254F5189214D37,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "ShieldConfigurationExtension";
+			productName = "ShieldConfigurationExtension";
+			productType = "com.apple.product-type.extensionkit.extension";
+		};
+		B4FCA6627DEE4C92A8024532 /* ShieldConfigurationExtensionMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 165DD745B6CA42D1AB0CE89C;
+			buildPhases = (
+				61AB6D89B1DC4CB8B924D773,
+				7E314BE798A54223984C1CC0,
+				5B05DBB756964778B0CD8921,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "ShieldConfigurationExtensionMac";
+			productName = "ShieldConfigurationExtensionMac";
+			productType = "com.apple.product-type.extensionkit.extension";
+		};
+		21188159C28E46F4B3CC6B97 /* ShieldActionExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D4299F0335E4448FA6EF4A22;
+			buildPhases = (
+				2C0ECA4EB9C04F7F91A9AC5D,
+				56BA27F73C054F8B953A230A,
+				D41569CEA9F54E06BA76C408,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "ShieldActionExtension";
+			productName = "ShieldActionExtension";
+			productType = "com.apple.product-type.extensionkit.extension";
+		};
+		F4450AE2F46E4954A26ECA0A /* ShieldActionExtensionMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2A33DE00402C49538E9CAE28;
+			buildPhases = (
+				0F36EC34C6294A4B90EBC15A,
+				3FD07847266246B7A4786641,
+				3547FEF300F14E15828B0CE0,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = "ShieldActionExtensionMac";
+			productName = "ShieldActionExtensionMac";
+			productType = "com.apple.product-type.extensionkit.extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		33700D45D9B847C7A0F6D4B1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					CB6E30357CC64D93876588AF = { CreatedOnToolsVersion = 15.0; };
+					ACC3426BDAE14905A6B796B0 = { CreatedOnToolsVersion = 15.0; };
+					735ABB72B9994B179DFB3185 = { CreatedOnToolsVersion = 15.0; };
+					0C440A8E9E8B41C19164FB07 = { CreatedOnToolsVersion = 15.0; };
+					D6563399BB704474AF33FA7B = { CreatedOnToolsVersion = 15.0; };
+					B4FCA6627DEE4C92A8024532 = { CreatedOnToolsVersion = 15.0; };
+					21188159C28E46F4B3CC6B97 = { CreatedOnToolsVersion = 15.0; };
+					F4450AE2F46E4954A26ECA0A = { CreatedOnToolsVersion = 15.0; };
+				};
+			};
+			buildConfigurationList = 8F7093D7AEBE401CBE149272;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base);
+			mainGroup = 33AEEEBA733B43268D89A464;
+			productRefGroup = F1DC135D192B4463B40CD998;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CB6E30357CC64D93876588AF,
+				ACC3426BDAE14905A6B796B0,
+				735ABB72B9994B179DFB3185,
+				0C440A8E9E8B41C19164FB07,
+				D6563399BB704474AF33FA7B,
+				B4FCA6627DEE4C92A8024532,
+				21188159C28E46F4B3CC6B97,
+				F4450AE2F46E4954A26ECA0A,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		9B5C9C83AE0C445FA0AB4EFE = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87998F1E31C24165B3E95757,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A7733BEB2A74B3F9E49EC58 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F82A062A67E46B596602E51,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		32072621C695452E9941C84C = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				03D8891293F9419BA6DF8016,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7ADD39299FDA4067B6F7FAC3 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				928F3D7473A9441DABE2295B,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CCEDAB6DE1BA4016B698499A = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B38F558FA57F4D6993BD7D8C,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7E314BE798A54223984C1CC0 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D500D517CE0940C7A16A4BF5,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		56BA27F73C054F8B953A230A = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5BA56951351140188C93B096,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		3FD07847266246B7A4786641 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60F1E5E0EBF8402A905719BA,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FEE797CC14CB4A0083B2B42A = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4C4014B0909249D2B1F00446,
+				6F28E10A8D4447399BD2BABA,
+				5BE1D506AE9A422A8EB9B024,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E5DE830CDDDD49209B21FBB5 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D0314A548534BD098BB557E,
+				FBB3363F729D48DD81EDE5D2,
+				DE34327CE9B249C0B523E4DB,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A16A8A8C3F9D4EB89AE88572 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CC3815A3150C40A284CF8924,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FEF87DCEACF9493FA59FECC5 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE73EFC2A3024140B2B54840,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2138C097223046F18CA0398A = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7064CA779B094BCEBCF3F828,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		61AB6D89B1DC4CB8B924D773 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B439A4B45E2343238AC57659,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2C0ECA4EB9C04F7F91A9AC5D = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5809883234A4ACDB43DE2BB,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		0F36EC34C6294A4B90EBC15A = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				80B7C99C9DD948E485F7EB12,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		63F014C7D2F842B0AB0AAF84 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1 $(inherited)";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1D0AA8D57BDD4FEF872133C5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		B8F4BEB18C6644729E803973 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/App/iOS/ScreenTimeScheduler.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/App/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CC355C2CBC004D65BCA20E06 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/App/iOS/ScreenTimeScheduler.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/App/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		C8B45F4DBE9E46B8977C6465 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/App/macOS/ScreenTimeSchedulerMac.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/App/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts";
+				PRODUCT_NAME = ScreenTimeSchedulerMac;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		5EADFE66CAE446E3B9891FDB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/App/macOS/ScreenTimeSchedulerMac.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/App/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts";
+				PRODUCT_NAME = ScreenTimeSchedulerMac;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		183B9F29FB24408F8F52C9C9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.DeviceActivityMonitorExtension";
+				PRODUCT_NAME = "DeviceActivityMonitorExtension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E91340256B544F5EBAA2B82A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.DeviceActivityMonitorExtension";
+				PRODUCT_NAME = "DeviceActivityMonitorExtension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		24FF553E5425478298F5EB33 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/macOS/DeviceActivityMonitorExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.DeviceActivityMonitorExtension";
+				PRODUCT_NAME = "DeviceActivityMonitorExtensionMac";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4CAEC9CCDD574FC5B03772EA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/macOS/DeviceActivityMonitorExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/DeviceActivityMonitorExtension/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.DeviceActivityMonitorExtension";
+				PRODUCT_NAME = "DeviceActivityMonitorExtensionMac";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		933CB1C496924A3A8DFC0061 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/iOS/ShieldConfigurationExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldConfigurationExtension";
+				PRODUCT_NAME = "ShieldConfigurationExtension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4AFF1CF6FCB5440793B2698A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/iOS/ShieldConfigurationExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldConfigurationExtension";
+				PRODUCT_NAME = "ShieldConfigurationExtension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D9E347DEA94448ACA0E58A42 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/macOS/ShieldConfigurationExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldConfigurationExtension";
+				PRODUCT_NAME = "ShieldConfigurationExtensionMac";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		621421ADA94D45328220CD09 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/macOS/ShieldConfigurationExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldConfigurationExtension/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldConfigurationExtension";
+				PRODUCT_NAME = "ShieldConfigurationExtensionMac";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		1BA687CB813D492DA144B964 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldActionExtension/iOS/ShieldActionExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldActionExtension/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldActionExtension";
+				PRODUCT_NAME = "ShieldActionExtension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B31CD3E89EEE438880A062BC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldActionExtension/iOS/ShieldActionExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldActionExtension/iOS/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldActionExtension";
+				PRODUCT_NAME = "ShieldActionExtension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B032CB221FC44713A4E2C53E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldActionExtension/macOS/ShieldActionExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldActionExtension/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldActionExtension";
+				PRODUCT_NAME = "ShieldActionExtensionMac";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		EB9FA3CCA58A4E1F9ED6FC86 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "ScreenTimeScheduler/Extensions/ShieldActionExtension/macOS/ShieldActionExtension.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "ScreenTimeScheduler/Extensions/ShieldActionExtension/macOS/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.example.sts.ShieldActionExtension";
+				PRODUCT_NAME = "ShieldActionExtensionMac";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8F7093D7AEBE401CBE149272 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63F014C7D2F842B0AB0AAF84 /* Debug */,
+				1D0AA8D57BDD4FEF872133C5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8C68E1E0C8724D99ADE687EC = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B8F4BEB18C6644729E803973 /* Debug */,
+				CC355C2CBC004D65BCA20E06 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F2C1FA8D9F14477CB7A11949 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C8B45F4DBE9E46B8977C6465 /* Debug */,
+				5EADFE66CAE446E3B9891FDB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A02B561E74FF4A778E04E7B5 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				183B9F29FB24408F8F52C9C9 /* Debug */,
+				E91340256B544F5EBAA2B82A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		42B1BF07AEBE4D0E8C7F9CEA = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24FF553E5425478298F5EB33 /* Debug */,
+				4CAEC9CCDD574FC5B03772EA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0B7945AE83E4A7E847DCD81 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				933CB1C496924A3A8DFC0061 /* Debug */,
+				4AFF1CF6FCB5440793B2698A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		165DD745B6CA42D1AB0CE89C = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D9E347DEA94448ACA0E58A42 /* Debug */,
+				621421ADA94D45328220CD09 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D4299F0335E4448FA6EF4A22 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1BA687CB813D492DA144B964 /* Debug */,
+				B31CD3E89EEE438880A062BC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2A33DE00402C49538E9CAE28 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B032CB221FC44713A4E2C53E /* Debug */,
+				EB9FA3CCA58A4E1F9ED6FC86 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 33700D45D9B847C7A0F6D4B1 /* Project object */;
+}
