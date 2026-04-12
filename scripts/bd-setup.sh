@@ -27,4 +27,10 @@ if ! bd list &>/dev/null 2>&1; then
   bd init --force --prefix screen
 fi
 echo "Importing beads from issues.jsonl..."
-bd import
+# bd import exits non-zero when Dolt has nothing to commit (already in sync).
+# Capture stderr so we can re-raise on real errors but swallow the no-op case.
+import_err=$(bd import 2>&1) || {
+  if ! echo "$import_err" | grep -q "nothing to commit"; then
+    echo "$import_err" >&2; exit 1
+  fi
+}
