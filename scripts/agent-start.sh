@@ -30,6 +30,12 @@ fi
 
 echo "Claimed issue: $claimed"
 
+# ── 3b. Push the claim to main so other agents see it as IN_PROGRESS ─────────
+bd export > .beads/issues.jsonl
+git add .beads/issues.jsonl
+git diff --cached --quiet || git commit -m "bd sync: claim $claimed"
+git push origin main
+
 # ── 4. Create an isolated worktree + branch ────────────────────────────────
 repo_name=$(basename "$(git rev-parse --show-toplevel)")
 worktree="../${repo_name}-$claimed"
