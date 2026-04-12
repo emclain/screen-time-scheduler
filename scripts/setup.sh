@@ -44,5 +44,10 @@ fi
 bd import
 bd list
 
+# ── 4. Install git hooks ──────────────────────────────────────────────────
+echo "Installing git hooks..."
+cp scripts/pre-commit.hook .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
 echo ""
 echo "Setup complete. Run 'bash scripts/agent-start.sh' to begin work."

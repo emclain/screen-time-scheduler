@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# pre-commit: keep CLAUDE.md minimal even if bd regenerates the BEADS INTEGRATION block.
+#
+# bd integrate rewrites the content between the BEGIN/END markers. This hook
+# replaces that block with a fixed minimal version before every commit, then
+# re-stages CLAUDE.md so the commit contains the canonical form.
+
+set -euo pipefail
+
+CLAUDE="CLAUDE.md"
+
+# Only act if CLAUDE.md is staged.
+if ! git diff --cached --name-only | grep -qF "$CLAUDE"; then
+  exit 0
+fi
+
+BEGIN_MARKER="<!-- BEGIN BEADS INTEGRATION"
+END_MARKER="<!-- END BEADS INTEGRATION -->"
+
+# Check whether the file actually contains the integration block.
+if ! grep -qF "$BEGIN_MARKER" "$CLAUDE"; then
+  exit 0
+fi
+
+MINIMAL_BLOCK='<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
+## Beads Reference
+
+See [AGENTS.md](AGENTS.md) for all agent instructions and the full Land +
+Reflect procedure. Quick reminders:
+
+- Use `bd` for ALL task tracking — not TodoWrite, TaskCreate, or markdown
+- Use `bd remember` for persistent knowledge — not MEMORY.md files
+- `bd dolt push` always fails here — export via git instead (see AGENTS.md)
+- Never use `git pull --rebase` — always merge
+<!-- END BEADS INTEGRATION -->'
+
+# Strip ALL BEGIN/END blocks (bd may append a new one each run), then
+# append exactly one minimal block. Keeping the markers tells bd the file
+# is already integrated so it won't re-add them.
+# Collapse runs of blank lines to a single blank line to clean up the gaps
+# left behind by stripped blocks.
+awk '
+  /<!-- BEGIN BEADS INTEGRATION/ { skip=1; next }
+  /<!-- END BEADS INTEGRATION -->/ { skip=0; next }
+  !skip { print }
+' "$CLAUDE" | awk 'NF || prev { print; prev=NF }' > "${CLAUDE}.tmp"
+
+printf '\n%s\n' "$MINIMAL_BLOCK" >> "${CLAUDE}.tmp"
+mv "${CLAUDE}.tmp" "$CLAUDE"
+
+git add "$CLAUDE"
+echo "pre-commit: enforced minimal BEADS INTEGRATION block in $CLAUDE"
