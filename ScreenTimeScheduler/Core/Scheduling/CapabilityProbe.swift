@@ -1,6 +1,7 @@
 import Foundation
 import ManagedSettings
 import FamilyControls
+import os
 
 // CapabilityProbe — runtime diagnostic for macOS 13 Ventura hardware.
 //
@@ -19,6 +20,22 @@ import FamilyControls
 // and the observed result. Keep this file for future reinstalls.
 
 #if os(macOS)
+
+/// Capabilities under empirical test by CapabilityProbe.
+///
+/// These map to the `.unknown` entries in `CapabilityMatrix.macOS13Support()`.
+/// Once each probe completes, update the corresponding `Capability` entry in
+/// `CapabilityMatrix` to reflect the observed result.
+public enum ShieldCapability: String, CaseIterable, Hashable, Sendable {
+    /// Atomically removing a single ApplicationToken from an active shield without
+    /// clearing the whole store. Required for app-scoped grant overrides (PLAN.md risk 11).
+    case shieldApplicationsPerTokenUnshield
+    /// FamilyControls `.child` authorization on macOS 13 (PLAN.md risk 9).
+    case familyControlsChildAuth
+    /// DeviceActivityMonitor callbacks fire reliably after sleep/wake (PLAN.md §Platform Notes).
+    /// Cannot be probed programmatically; requires a manual sleep/wake cycle.
+    case deviceActivityReliableAcrossSleep
+}
 
 public actor CapabilityProbe {
 
