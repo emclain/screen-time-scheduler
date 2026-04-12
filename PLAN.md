@@ -334,6 +334,31 @@ Line-oriented so `tail -f`, `grep`, and `jq` all work directly on the synced fil
 1. **CKShare-to-child flakiness** -- mitigated by QR-first onboarding.
 2. **macOS 13 Ventura API parity** -- iMac stuck on Ventura; treat gaps as permanent.
 3. **macOS DAM reliability across sleep** -- wake-nudge LaunchAgent is a patch, not a fix.
+
+   `CapabilityMatrix.damCallbacksReliableAcrossSleepWake` is `.unknown` on macOS 13.
+   The DAM extension now emits `dam_missed_callback` (warn level) when sequence counters
+   detect a skipped `intervalDidStart` or `intervalDidEnd`.  Counters persist in the App
+   Group UserDefaults under `dam_start_seq` / `dam_end_seq` and survive restarts.
+
+   **Test procedure (iMac 2017, macOS 13 Ventura):**
+   1. Install a build with this logging.  Register a 5-minute DAM schedule.
+   2. Let the Mac run through 3+ `intervalDidStart`/`intervalDidEnd` cycles.
+      Confirm no `dam_missed_callback` events in Console.app
+      (`log show --predicate 'subsystem == "com.example.sts" AND category == "dam"'`).
+   3. Sleep the Mac mid-interval (lid close or System Settings → Sleep).
+      Wake it during the next scheduled interval.  Check for `dam_missed_callback`.
+   4. Repeat with an overnight sleep.
+
+   **Expected outcomes:**
+   - If all callbacks fire: update `CapabilityMatrix.damCallbacksReliableAcrossSleepWake`
+     to `.enforced` for macOS 13 and remove the wake-nudge LaunchAgent.
+   - If callbacks are missed but the wake-nudge recovers them within one polling cycle:
+     update to `.enforced` (with a note: "reliable only with LaunchAgent nudge").
+   - If callbacks are silently skipped and the wake-nudge does not recover them:
+     update to `.silentNoOp`, and re-evaluate whether DAM is a viable enforcement
+     mechanism on this device.
+
+   **Findings (empirical, 2026-04-__):** *pending hardware verification*
 4. **Token portability UX** -- FamilyActivityPicker per device per group, repeated after OS upgrades. Managed child devices fall back to blanket category shields until a parent re-picks tokens (see Failure Modes #3). Category token stability across upgrades is unverified — if categories also invalidate, the blanket shield would need to use a hard-coded "all categories" set rather than stored tokens.
 5. **Developer program lapse** -- $99/yr renewal; lapsing revokes provisioning profiles.
 6. **iMac 2017 security EOL** -- household problem, not a plan defect.

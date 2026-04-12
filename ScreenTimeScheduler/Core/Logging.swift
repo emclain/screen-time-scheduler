@@ -18,8 +18,10 @@ enum LogEvent {
     static let authGranted      = "auth_granted"
     static let damIntervalStart = "dam_interval_start"
     static let damIntervalEnd   = "dam_interval_end"
+    static let damMissedCallback = "dam_missed_callback"
     static let shieldApplied    = "shield_applied"
     static let shieldCleared    = "shield_cleared"
+    static let tokenLoadFailed  = "token_load_failed"
 }
 
 // MARK: - Convenience wrappers
