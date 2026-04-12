@@ -248,19 +248,21 @@ Installation is via Xcode (USB or Wi-Fi pairing) to each device registered to th
 
 ### Child iMac (macOS 13 Ventura)
 
+The parent runs this whole flow and needs four credentials, all of which a guardian of a Family Sharing child Apple ID normally already controls: the child's macOS user password, a local admin password on the child iMac (macOS requires at least one admin account; the parent owns it), the child's Apple ID password, and the Family Sharing Screen Time passcode.
+
 1. Create a non-privileged standard macOS user account for the child. The child logs in to this account with their own Apple ID.
-2. Install app from Xcode in the child's user session.
+2. **Install the `.app` bundle.** Xcode cannot push macOS targets to a remote Mac the way it pushes iOS builds to paired devices, so installation is a manual drop-in. On the dev machine, register the child iMac's Provisioning UDID (System Information → Hardware) in the Apple Developer portal, refresh the development provisioning profile to include it, and rebuild so the refreshed profile is embedded in the `.app`. Transfer the signed `.app` to the child iMac (AirDrop / shared iCloud Drive / USB / `scp`) and drop it into `~/Applications` in the child's user session — writable by the standard user, no admin needed for the copy itself. First launch triggers Gatekeeper's "developer cannot be verified" dialog; clear it once via System Settings → Privacy & Security → "Open Anyway" using the admin password. Subsequent launches are silent.
 3. App launches onboarding: attempt to request FamilyControls `.child` authorization (matches the iPad, tamper-resistant). **Open question**: whether `.child` is actually available on macOS 13 for a Family Sharing child Apple ID — the framework is documented as available on macOS 13+ with "similar semantics" to iOS, but `.child` specifically has not been verified. If `.child` fails at runtime, fall back to `.individual` and flag the weaker guarantees (see Open Risks).
 4. QR-bootstrap handshake and `CKShare` acceptance, same as child iPad.
 5. Present `FamilyActivityPicker` to capture token sets.
 6. App registers DAM schedules and the daily recovery anchor.
 7. **Background operation**: the app is built with `LSUIElement = true` (no dock icon, no app switcher entry, no application menu). A small menu bar item is the only visible surface, used by the parent for token re-pick and status. The child has no affordance to quit the app through normal UI.
-8. Install a LaunchAgent plist to `~/Library/LaunchAgents/` in the child's session with `RunAtLoad = true` and `KeepAlive = true`. This launches the app at login and automatically relaunches it if it exits. The same LaunchAgent also pings DAM on wake from sleep.
+8. Install a LaunchAgent plist to `~/Library/LaunchAgents/` in the child's session with `RunAtLoad = true` and `KeepAlive = true`. This launches the app at login and automatically relaunches it if it exits. The same LaunchAgent also pings DAM on wake from sleep. `~/Library/LaunchAgents/` is writable by the standard user, no admin needed.
 9. **Shared logs folder** (optional, best-effort): same as child iPad step 8, but via `NSOpenPanel` and Finder. Requires the parent to have set up and shared `ScreenTimeSchedulerLogs/` during parent iPhone onboarding.
 
 ### Annual maintenance
 
-Development provisioning profiles expire after 12 months. Rebuild and reinstall from Xcode on each device (~10 min/device). Set a calendar reminder. The app continues running after expiry until iOS/macOS revalidates the profile, but don't rely on the grace period.
+Development provisioning profiles expire after 12 months. Rebuild on the dev machine and redeploy to each device — Xcode pushes directly to paired iOS/iPadOS devices; macOS targets require re-transferring the rebuilt `.app` to each Mac and re-dropping it into `~/Applications` (Gatekeeper remembers the prior approval across rebuilds that keep the same team and bundle ID, so no admin re-auth on updates). Device UDIDs persist in the Apple Developer portal across profile renewals. Set a calendar reminder. The app continues running after expiry until iOS/macOS revalidates the profile, but don't rely on the grace period.
 
 ## Logging
 
