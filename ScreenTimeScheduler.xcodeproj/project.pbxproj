@@ -11,10 +11,12 @@
 		6F28E10A8D4447399BD2BABA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C452902C4F4B85998D2FD7; };
 		87998F1E31C24165B3E95757 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 939B19C03398490191BAB942; };
 		5BE1D506AE9A422A8EB9B024 /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104A32AB95845B5B00629DB; };
+		D9B714BBA81440AB8A2D9FF2 /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1999BD2CFC1A40EC9F590B92; };
 		7D0314A548534BD098BB557E /* ScreenTimeSchedulerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC61E12B322401EA720DEB5; };
 		FBB3363F729D48DD81EDE5D2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B0EE22D9F142138615FC10; };
 		4F82A062A67E46B596602E51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF561B1F3E1B415F9F26C52B; };
 		DE34327CE9B249C0B523E4DB /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104A32AB95845B5B00629DB; };
+		69640FDE57B7498998F01E24 /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1999BD2CFC1A40EC9F590B92; };
 		CC3815A3150C40A284CF8924 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76F601F861147928B04CBA2; };
 		03D8891293F9419BA6DF8016 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD7926D78C1849538D671F03; };
 		CE73EFC2A3024140B2B54840 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1F063CEC067466F842A8D89; };
@@ -41,6 +43,7 @@
 		9343B34B0E4B475F86ED37EE /* ScreenTimeSchedulerMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ScreenTimeSchedulerMac.entitlements; path = App/macOS/ScreenTimeSchedulerMac.entitlements; sourceTree = "<group>"; };
 		BF561B1F3E1B415F9F26C52B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = App/macOS/Assets.xcassets; sourceTree = "<group>"; };
 		5104A32AB95845B5B00629DB /* Placeholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Placeholder.swift; path = Core/Placeholder.swift; sourceTree = "<group>"; };
+		1999BD2CFC1A40EC9F590B92 /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Logging.swift; path = Core/Logging.swift; sourceTree = "<group>"; };
 		D76F601F861147928B04CBA2 /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeviceActivityMonitorExtension.swift; path = Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
 		CD7926D78C1849538D671F03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/DeviceActivityMonitorExtension/iOS/Info.plist; sourceTree = "<group>"; };
 		88E5ACD9028E4918B371F96B /* DeviceActivityMonitorExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = DeviceActivityMonitorExtension.entitlements; path = Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.entitlements; sourceTree = "<group>"; };
@@ -117,6 +120,7 @@
 			isa = PBXGroup;
 			children = (
 				5104A32AB95845B5B00629DB,
+				1999BD2CFC1A40EC9F590B92,
 			);
 			path = "ScreenTimeScheduler/Core";
 			name = "Core";
@@ -522,6 +526,7 @@
 				4C4014B0909249D2B1F00446,
 				6F28E10A8D4447399BD2BABA,
 				5BE1D506AE9A422A8EB9B024,
+				D9B714BBA81440AB8A2D9FF2,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -532,6 +537,7 @@
 				7D0314A548534BD098BB557E,
 				FBB3363F729D48DD81EDE5D2,
 				DE34327CE9B249C0B523E4DB,
+				69640FDE57B7498998F01E24,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
