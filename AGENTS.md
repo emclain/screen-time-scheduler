@@ -47,6 +47,19 @@ For a brand-new checkout (installs `bd` CLI if absent):
 bash scripts/setup.sh
 ```
 
+## Beads state and `main`
+
+`.beads/issues.jsonl` on `main` is the **canonical beads database** shared by
+all agents, whether running in worktrees, fresh checkouts, or containers.
+
+`bd-setup.sh` rebuilds the local Dolt DB from this file at the start of every
+session. The Dolt DB itself is runtime state and is never committed to git.
+
+**This means every `bd export` must land on `main`.** An export committed only
+to a feature branch is invisible to other agents until it merges. Both workflows
+below ensure this: ad-hoc agents work directly on `main`; issue-work agents
+push their export commit via `work/<id>:main` in `agent-land.sh`.
+
 ## Ad-hoc Workflow
 
 ### 1. Start
