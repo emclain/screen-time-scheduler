@@ -1,7 +1,4 @@
-See [AGENTS.md](AGENTS.md) for all agent instructions.
-
-
-
+@AGENTS.md
 
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
