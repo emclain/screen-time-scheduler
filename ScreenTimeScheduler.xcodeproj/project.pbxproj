@@ -14,8 +14,10 @@
 		D9B714BBA81440AB8A2D9FF2 /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1999BD2CFC1A40EC9F590B92; };
 		CC33DD44EE55FF66AA11BB22 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66; };
 		DD44EE55FF66AA11BB22CC33 /* ScheduleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF66AA11; };
+		AABB1122CC33DD44EE55FF61 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CC33DD44EE55FF60; };
 		EE55FF66AA11BB22CC33DD44 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66; };
 		FF66AA11BB22CC33DD44EE55 /* ScheduleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF66AA11; };
+		AABB1122CC33DD44EE55FF62 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CC33DD44EE55FF60; };
 		7D0314A548534BD098BB557E /* ScreenTimeSchedulerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC61E12B322401EA720DEB5; };
 		FBB3363F729D48DD81EDE5D2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B0EE22D9F142138615FC10; };
 		4F82A062A67E46B596602E51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF561B1F3E1B415F9F26C52B; };
@@ -50,6 +52,7 @@
 		1999BD2CFC1A40EC9F590B92 /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Logging.swift; path = Core/Logging.swift; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE55FF66 /* Schedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Schedule.swift; path = Core/Schedule.swift; sourceTree = "<group>"; };
 		BB22CC33DD44EE55FF66AA11 /* ScheduleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScheduleManager.swift; path = Core/ScheduleManager.swift; sourceTree = "<group>"; };
+		AABB1122CC33DD44EE55FF60 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TokenStore.swift; path = Core/TokenStore.swift; sourceTree = "<group>"; };
 		D76F601F861147928B04CBA2 /* DeviceActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeviceActivityMonitorExtension.swift; path = Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.swift; sourceTree = "<group>"; };
 		CD7926D78C1849538D671F03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Extensions/DeviceActivityMonitorExtension/iOS/Info.plist; sourceTree = "<group>"; };
 		88E5ACD9028E4918B371F96B /* DeviceActivityMonitorExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = DeviceActivityMonitorExtension.entitlements; path = Extensions/DeviceActivityMonitorExtension/iOS/DeviceActivityMonitorExtension.entitlements; sourceTree = "<group>"; };
@@ -129,6 +132,7 @@
 				1999BD2CFC1A40EC9F590B92,
 				AA11BB22CC33DD44EE55FF66,
 				BB22CC33DD44EE55FF66AA11,
+				AABB1122CC33DD44EE55FF60,
 			);
 			path = "ScreenTimeScheduler/Core";
 			name = "Core";
@@ -537,6 +541,7 @@
 				D9B714BBA81440AB8A2D9FF2,
 				CC33DD44EE55FF66AA11BB22,
 				DD44EE55FF66AA11BB22CC33,
+				AABB1122CC33DD44EE55FF61,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -550,6 +555,7 @@
 				69640FDE57B7498998F01E24,
 				EE55FF66AA11BB22CC33DD44,
 				FF66AA11BB22CC33DD44EE55,
+				AABB1122CC33DD44EE55FF62,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
