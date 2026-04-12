@@ -165,6 +165,12 @@ bd update <id> --claim  # Claim work
 bd close <id>         # Complete work
 ```
 
+**After claiming**, push immediately so other agents see the claim:
+```bash
+bd export > .beads/issues.jsonl
+git add .beads/issues.jsonl && git commit -m "Claim <id>" && git push
+```
+
 ### Rules
 
 - Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
