@@ -12,6 +12,16 @@
 
 set -euo pipefail
 
+# ── 0. Commit any dirty issues.jsonl before pulling ───────────────────────
+# A previous session may have written beads without exporting+committing.
+# Committing here prevents the merge from aborting due to local changes.
+if ! git diff --quiet .beads/issues.jsonl 2>/dev/null || \
+   ! git diff --cached --quiet .beads/issues.jsonl 2>/dev/null; then
+  echo "Committing local issues.jsonl changes before pull..."
+  git add .beads/issues.jsonl
+  git diff --cached --quiet || git commit -m "bd sync: commit local issues.jsonl before pull"
+fi
+
 # ── 1. Pull latest ─────────────────────────────────────────────────────────
 # Must happen first so the agent sees all files (PLAN.md, DESIGN.md, etc.)
 # and the freshest issues.jsonl before populating the local Dolt DB.
