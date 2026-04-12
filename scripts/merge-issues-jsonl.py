@@ -118,6 +118,20 @@ def merge(ancestor_path, ours_path, theirs_path):
             merged[issue_id] = theirs[issue_id]
         # if neither: was deleted on both sides — omit
 
+    # Warn about status transitions caused by the merge
+    for issue_id in all_ids:
+        if issue_id not in merged:
+            continue
+        our_status = ours.get(issue_id, {}).get("status")
+        merged_status = merged[issue_id].get("status")
+        if our_status and merged_status and our_status != merged_status:
+            updated_at = merged[issue_id].get("updated_at", "")
+            print(
+                f"warning: {issue_id}: status changed {our_status} → {merged_status}"
+                f" during merge (updated_at: {updated_at})",
+                file=sys.stderr,
+            )
+
     # Write merged result back to %A (ours path)
     with open(ours_path, "w", encoding="utf-8") as f:
         for issue_id in all_ids:
