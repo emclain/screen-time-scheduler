@@ -85,6 +85,13 @@ to integrate them.
 
 Each agent works on **exactly one issue**, then stops.
 
+> **⚠️ CRITICAL: Always pull before claiming**
+>
+> Before claiming any work, you MUST have the latest code from `origin/main`.
+> Use `agent-start.sh` — it handles this automatically. If you manually run
+> `bd update <id> --claim` without pulling first, you will work on stale code
+> and create merge conflicts or duplicate work.
+
 ### 1. Start
 
 ```bash
@@ -159,17 +166,13 @@ This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full 
 ### Quick Reference
 
 ```bash
-bd ready              # Find available work
+bd ready              # Find available work (info only)
 bd show <id>          # View issue details
-bd update <id> --claim  # Claim work
 bd close <id>         # Complete work
 ```
 
-**After claiming**, push immediately so other agents see the claim:
-```bash
-bd export > .beads/issues.jsonl
-git add .beads/issues.jsonl && git commit -m "Claim <id>" && git push
-```
+> **Do NOT manually run `bd update <id> --claim`** — use `agent-start.sh` instead.
+> It pulls latest code first, preventing stale-branch issues.
 
 ### Rules
 
