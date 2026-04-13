@@ -29,6 +29,9 @@
 		EE55FF66AA11BB22CC33DD44 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* Schedule.swift */; };
 		FBB3363F729D48DD81EDE5D2 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0B0EE22D9F142138615FC10 /* ContentView.swift */; };
 		FF66AA11BB22CC33DD44EE55 /* ScheduleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF66AA11 /* ScheduleManager.swift */; };
+		CC11AA22BB33DD44EE55F004 /* CapabilityMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11AA22BB33DD44EE55F001 /* CapabilityMatrix.swift */; };
+		CC11AA22BB33DD44EE55F005 /* CapabilityProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11AA22BB33DD44EE55F002 /* CapabilityProbe.swift */; };
+		CC11AA22BB33DD44EE55F006 /* CapabilityMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11AA22BB33DD44EE55F001 /* CapabilityMatrix.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -65,6 +68,8 @@
 		DA806227C2854D35B23F4F1C /* ShieldConfigurationExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ShieldConfigurationExtension.entitlements; path = ShieldConfigurationExtension.entitlements; sourceTree = "<group>"; };
 		EF1B9B1956704F6BAFE8FC42 /* ShieldConfigurationExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = ShieldConfigurationExtension.entitlements; path = ShieldConfigurationExtension.entitlements; sourceTree = "<group>"; };
 		F0B0EE22D9F142138615FC10 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		CC11AA22BB33DD44EE55F001 /* CapabilityMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CapabilityMatrix.swift; path = CapabilityMatrix.swift; sourceTree = "<group>"; };
+		CC11AA22BB33DD44EE55F002 /* CapabilityProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CapabilityProbe.swift; path = CapabilityProbe.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -263,9 +268,20 @@
 				AA11BB22CC33DD44EE55FF66 /* Schedule.swift */,
 				BB22CC33DD44EE55FF66AA11 /* ScheduleManager.swift */,
 				AABB1122CC33DD44EE55FF60 /* TokenStore.swift */,
+				CC11AA22BB33DD44EE55F003 /* Scheduling */,
 			);
 			name = Core;
 			path = Core;
+			sourceTree = "<group>";
+		};
+		CC11AA22BB33DD44EE55F003 /* Scheduling */ = {
+			isa = PBXGroup;
+			children = (
+				CC11AA22BB33DD44EE55F001 /* CapabilityMatrix.swift */,
+				CC11AA22BB33DD44EE55F002 /* CapabilityProbe.swift */,
+			);
+			name = Scheduling;
+			path = Scheduling;
 			sourceTree = "<group>";
 		};
 		E43E6B4078A143039C570986 /* macOS */ = {
@@ -497,6 +513,8 @@
 				EE55FF66AA11BB22CC33DD44 /* Schedule.swift in Sources */,
 				FF66AA11BB22CC33DD44EE55 /* ScheduleManager.swift in Sources */,
 				AABB1122CC33DD44EE55FF62 /* TokenStore.swift in Sources */,
+				CC11AA22BB33DD44EE55F004 /* CapabilityMatrix.swift in Sources */,
+				CC11AA22BB33DD44EE55F005 /* CapabilityProbe.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -511,6 +529,7 @@
 				CC33DD44EE55FF66AA11BB22 /* Schedule.swift in Sources */,
 				DD44EE55FF66AA11BB22CC33 /* ScheduleManager.swift in Sources */,
 				AABB1122CC33DD44EE55FF61 /* TokenStore.swift in Sources */,
+				CC11AA22BB33DD44EE55F006 /* CapabilityMatrix.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

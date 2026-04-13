@@ -24,6 +24,8 @@ extension Window {
 
 // MARK: - DeviceActivity names
 
+#if os(iOS)
 extension DeviceActivityName {
     static let hardcodedWindow = DeviceActivityName("com.example.sts.window.hardcoded")
 }
+#endif

@@ -11,6 +11,7 @@ final class ScheduleManager {
     private init() {}
 
     func register() {
+        #if os(iOS)
         let window = Window.hardcoded
         let schedule = DeviceActivitySchedule(
             intervalStart: window.start,
@@ -18,7 +19,7 @@ final class ScheduleManager {
             repeats: true
         )
         do {
-            try DeviceActivityCenter.shared.startMonitoring(
+            try DeviceActivityCenter().startMonitoring(
                 .hardcodedWindow,
                 during: schedule
             )
@@ -30,5 +31,6 @@ final class ScheduleManager {
                      "schedule registration failed activity=\(DeviceActivityName.hardcodedWindow.rawValue) " +
                      "error=\(error)")
         }
+        #endif
     }
 }
