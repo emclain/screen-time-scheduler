@@ -68,18 +68,21 @@ if [[ -z "$VM_IP" ]]; then
 fi
 echo "VM IP: ${VM_IP}"
 
-# ── 4. Mount the VirtioFS share inside the guest ─────────────────────────
-echo "Mounting VirtioFS share inside VM..."
-ssh $SSH_OPTS "${SSH_USER}@${VM_IP}" bash <<EOF
-  set -e
-  if mount | grep -q '${GUEST_MOUNT}'; then
-    echo "  Already mounted at ${GUEST_MOUNT}"
-  else
-    sudo mkdir -p "${GUEST_MOUNT}"
-    sudo mount_virtiofs "${SHARE_NAME}" "${GUEST_MOUNT}"
-    echo "  Mounted ${SHARE_NAME} at ${GUEST_MOUNT}"
+# ── 4. Wait for VirtioFS auto-mount ──────────────────────────────────────
+# macOS guests auto-mount VirtioFS shares at /Volumes/<name> — no manual
+# mount_virtiofs call needed. Just wait for the mount to appear.
+echo "Waiting for VirtioFS share to auto-mount at ${GUEST_MOUNT}..."
+MOUNT_WAIT=30
+MOUNT_ELAPSED=0
+until ssh $SSH_OPTS "${SSH_USER}@${VM_IP}" "test -d '${GUEST_MOUNT}'" 2>/dev/null; do
+  sleep 2
+  MOUNT_ELAPSED=$((MOUNT_ELAPSED + 2))
+  if [[ $MOUNT_ELAPSED -ge $MOUNT_WAIT ]]; then
+    echo "Warning: ${GUEST_MOUNT} not visible after ${MOUNT_WAIT}s — continuing anyway." >&2
+    break
   fi
-EOF
+done
+echo "  Share available at ${GUEST_MOUNT}"
 
 # ── 5. Hand off interactive SSH session ───────────────────────────────────
 # Disable the EXIT trap — we want the VM to keep running after we disconnect.
