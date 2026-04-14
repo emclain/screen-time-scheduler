@@ -46,10 +46,19 @@ git pull --no-rebase origin main
 # if on VirtioFS, use an external dolt sql-server whose data lives on the
 # VM's local SSD instead.
 REPO_ROOT_FOR_MOUNT="$(git rev-parse --show-toplevel)"
-MOUNT_TYPE="$(df -T "$REPO_ROOT_FOR_MOUNT" 2>/dev/null | awk 'NR==2{print $2}' || true)"
+# Detect VirtioFS: macOS uses "AppleVirtIOFS", Linux uses "virtiofs".
+# We check the device backing the repo root then look it up in mount/proc.
+_DEVICE="$(df "$REPO_ROOT_FOR_MOUNT" 2>/dev/null | awk 'NR==2{print $1}')"
+_ON_VIRTIOFS=false
+if mount | grep -q "^$_DEVICE" && mount | grep "^$_DEVICE" | grep -qi "virtiofs\|AppleVirtIOFS"; then
+  _ON_VIRTIOFS=true
+elif grep -q " virtiofs " /proc/mounts 2>/dev/null && \
+     awk -v d="$_DEVICE" '$1==d{print $3}' /proc/mounts | grep -q virtiofs; then
+  _ON_VIRTIOFS=true
+fi
 
 BD_INIT_EXTRA_FLAGS=""
-if [ "$MOUNT_TYPE" = "virtiofs" ]; then
+if [ "$_ON_VIRTIOFS" = "true" ]; then
   # ── VirtioFS VM: use external dolt server on local SSD ──────────────────
   DOLT_DATA_DIR="/Users/admin/.beads-dolt-server"
   DOLT_LOG="$DOLT_DATA_DIR/dolt-server.log"
