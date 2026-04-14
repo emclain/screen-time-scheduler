@@ -16,7 +16,8 @@ set -euo pipefail
 VM="${1:-sequoia-xcode16}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SHARE_NAME="project"
-GUEST_MOUNT="/Volumes/${SHARE_NAME}"
+# macOS guests mount all VirtioFS shares under /Volumes/My Shared Files/<tag>
+GUEST_MOUNT="/Volumes/My Shared Files/${SHARE_NAME}"
 SSH_USER="admin"
 SSH_OPTS="-A -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR -o ConnectTimeout=5"
 
