@@ -40,32 +40,42 @@ git config beads.role contributor 2>/dev/null || true
 echo "Pulling latest from origin..."
 git pull --no-rebase origin main
 
-# ── 2. Ensure dolt server is running (external server mode) ────────────────
-# The beads DB uses an external dolt sql-server at 127.0.0.1:3307 whose data
-# lives on the VM's local SSD (~/.beads-dolt-server) — not on the VirtioFS
-# mount, which doesn't support fsync.  LaunchAgent auto-starts it at login;
-# this block handles the first run or any restart gap.
-if ! lsof -i :3307 &>/dev/null 2>&1; then
-  echo "Starting dolt sql-server..."
-  nohup /opt/homebrew/bin/dolt sql-server \
-    --host 127.0.0.1 --port 3307 \
-    --data-dir /Users/admin/.beads-dolt-server \
-    > /Users/admin/.beads-dolt-server/dolt-server.log 2>&1 &
-  # Wait up to 10s for it to become ready
-  for i in $(seq 1 10); do
-    sleep 1
-    lsof -i :3307 &>/dev/null && break
-    echo "  waiting for dolt server... ($i)"
-  done
+# ── 2. Detect filesystem and configure dolt mode ───────────────────────────
+# VirtioFS (used when this repo is mounted into a Tart VM) doesn't support
+# fsync, so embedded Dolt fails.  Detect it by checking the mount type;
+# if on VirtioFS, use an external dolt sql-server whose data lives on the
+# VM's local SSD instead.
+REPO_ROOT_FOR_MOUNT="$(git rev-parse --show-toplevel)"
+MOUNT_TYPE="$(df -T "$REPO_ROOT_FOR_MOUNT" 2>/dev/null | awk 'NR==2{print $2}' || true)"
+
+BD_INIT_EXTRA_FLAGS=""
+if [ "$MOUNT_TYPE" = "virtiofs" ]; then
+  # ── VirtioFS VM: use external dolt server on local SSD ──────────────────
+  DOLT_DATA_DIR="/Users/admin/.beads-dolt-server"
+  DOLT_LOG="$DOLT_DATA_DIR/dolt-server.log"
+  if ! lsof -i :3307 &>/dev/null 2>&1; then
+    echo "Starting dolt sql-server (VirtioFS mode)..."
+    mkdir -p "$DOLT_DATA_DIR"
+    nohup /opt/homebrew/bin/dolt sql-server \
+      --host 127.0.0.1 --port 3307 \
+      --data-dir "$DOLT_DATA_DIR" \
+      > "$DOLT_LOG" 2>&1 &
+    for i in $(seq 1 10); do
+      sleep 1
+      lsof -i :3307 &>/dev/null && break
+      echo "  waiting for dolt server... ($i)"
+    done
+  fi
+  BD_INIT_EXTRA_FLAGS="--server --server-host 127.0.0.1 --server-port 3307 --server-user root"
 fi
 
 # ── 3. Ensure bd is initialised and up-to-date ─────────────────────────────
-# bd uses external dolt server mode.  Only run bd init if bd is broken.
+# Only run bd init if bd is broken (non-zero exit from bd list).
 if ! bd list &>/dev/null 2>&1; then
   echo "Initialising beads database..."
+  # shellcheck disable=SC2086
   bd init --force --prefix screen --from-jsonl --non-interactive \
-    --skip-agents --skip-hooks \
-    --server --server-host 127.0.0.1 --server-port 3307 --server-user root
+    --skip-agents --skip-hooks $BD_INIT_EXTRA_FLAGS
 fi
 echo "Importing beads from issues.jsonl..."
 # bd import exits non-zero when Dolt has nothing to commit (already in sync).
