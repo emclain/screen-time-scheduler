@@ -40,13 +40,32 @@ git config beads.role contributor 2>/dev/null || true
 echo "Pulling latest from origin..."
 git pull --no-rebase origin main
 
-# ── 2. Ensure bd is initialised and up-to-date ─────────────────────────────
-# The embedded Dolt DB is gitignored and starts empty on every fresh
-# container. bd import (upsert) rebuilds it from the git-tracked issues.jsonl.
-# Only run bd init if bd itself is broken (non-zero exit from bd list).
+# ── 2. Ensure dolt server is running (external server mode) ────────────────
+# The beads DB uses an external dolt sql-server at 127.0.0.1:3307 whose data
+# lives on the VM's local SSD (~/.beads-dolt-server) — not on the VirtioFS
+# mount, which doesn't support fsync.  LaunchAgent auto-starts it at login;
+# this block handles the first run or any restart gap.
+if ! lsof -i :3307 &>/dev/null 2>&1; then
+  echo "Starting dolt sql-server..."
+  nohup /opt/homebrew/bin/dolt sql-server \
+    --host 127.0.0.1 --port 3307 \
+    --data-dir /Users/admin/.beads-dolt-server \
+    > /Users/admin/.beads-dolt-server/dolt-server.log 2>&1 &
+  # Wait up to 10s for it to become ready
+  for i in $(seq 1 10); do
+    sleep 1
+    lsof -i :3307 &>/dev/null && break
+    echo "  waiting for dolt server... ($i)"
+  done
+fi
+
+# ── 3. Ensure bd is initialised and up-to-date ─────────────────────────────
+# bd uses external dolt server mode.  Only run bd init if bd is broken.
 if ! bd list &>/dev/null 2>&1; then
   echo "Initialising beads database..."
-  bd init --force --prefix screen
+  bd init --force --prefix screen --from-jsonl --non-interactive \
+    --skip-agents --skip-hooks \
+    --server --server-host 127.0.0.1 --server-port 3307 --server-user root
 fi
 echo "Importing beads from issues.jsonl..."
 # bd import exits non-zero when Dolt has nothing to commit (already in sync).
