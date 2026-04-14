@@ -1,6 +1,4 @@
 import Foundation
-import ManagedSettings
-import FamilyControls
 import os
 
 // CapabilityProbe — runtime diagnostic for macOS 13 Ventura hardware.
@@ -75,39 +73,11 @@ public actor CapabilityProbe {
     // ManagedSettingsStore write API accepts an update to a smaller set without
     // throwing — it does not verify enforcement in the UI.
     private func probePerTokenUnshield() async -> ProbeResult {
-        let store = ManagedSettingsStore()
-
-        // Ensure clean state before probe.
-        defer {
-            store.shield.applications = nil
-            store.shield.applicationCategories = nil
-        }
-
-        // Write a nil → nil transition (trivially works).
-        store.shield.applications = nil
-        let afterClear = store.shield.applications
-        guard afterClear == nil else {
-            return .failed(reason: "shield.applications could not be cleared to nil")
-        }
-
-        // We cannot manufacture real ApplicationTokens here, so we confirm the
-        // write path accepts an empty set (which effectively clears the shield).
-        store.shield.applications = []
-        let afterEmpty = store.shield.applications
-        // On macOS 13, setting to empty Set should behave the same as nil.
-        // If it throws or returns a non-empty set, something is wrong.
-        if let apps = afterEmpty, !apps.isEmpty {
-            return .failed(reason: "shield.applications = [] left non-empty store: \(apps.count) tokens")
-        }
-
-        // Mechanical write succeeded. Full per-token test requires real tokens —
-        // do this manually during onboarding or a dedicated UI test.
-        return .partiallyVerified(
-            note: "ManagedSettingsStore write API accepts nil/empty transitions without error. " +
-                  "Full per-token subtract test requires real ApplicationTokens from FamilyActivityPicker. " +
-                  "Run ScheduleEditorView onboarding, pick 2 apps, shield both, then attempt a " +
-                  "single-token removal and confirm only one app is still shielded. " +
-                  "Update CapabilityMatrix.shieldApplicationsPerTokenUnshield to .empirical."
+        // ManagedSettingsStore is @available(macOS, unavailable) in the Xcode 16 SDK —
+        // these types exist only for iOS/Mac Catalyst. The probe cannot run on native macOS.
+        return .failed(
+            reason: "ManagedSettingsStore is unavailable on native macOS (Xcode 16 SDK). " +
+                    "Run this probe on the iOS target to verify per-token unshield behaviour."
         )
     }
 
@@ -119,50 +89,12 @@ public actor CapabilityProbe {
     // Either way, the error domain/code reveals whether the API path exists on
     // macOS 13 for this account type.
     private func probeFamilyControlsChildAuth() async -> ProbeResult {
-        let center = AuthorizationCenter.shared
-        let currentStatus = center.authorizationStatus
-
-        // If already authorized (from a previous session), report what mode was used.
-        if currentStatus == .approved {
-            return .verified(
-                note: "FamilyControls already authorized (status=.approved). " +
-                      "Check AuthorizationCenter.shared.authorizationStatus and whether " +
-                      "the app's entitlement used .child or .individual."
-            )
-        }
-
-        // Attempt .child request and inspect the result.
-        do {
-            try await center.requestAuthorization(for: .child)
-            return .verified(
-                note: "FamilyControls .child authorization request succeeded. " +
-                      "Update CapabilityMatrix.familyControlsChildAuth to " +
-                      ".empirical(supported: true). PLAN.md risk 9 resolved."
-            )
-        } catch let error as FamilyControlsError {
-            switch error {
-            case .restricted:
-                return .verified(
-                    note: "FamilyControls .child returned .restricted — likely not a Family " +
-                          "Sharing child account. Test again with the actual child Apple ID. " +
-                          "If it still fails, fall back to .individual per PLAN.md risk 9."
-                )
-            case .invalidArgument:
-                return .failed(
-                    reason: "FamilyControls .child returned .invalidArgument on macOS 13. " +
-                            "API may not support .child on this platform. " +
-                            "Update CapabilityMatrix.familyControlsChildAuth to " +
-                            ".empirical(supported: false) and use .individual fallback."
-                )
-            default:
-                return .partiallyVerified(
-                    note: "FamilyControls .child returned unexpected error: \(error). " +
-                          "Run on the child's iCloud account to confirm."
-                )
-            }
-        } catch {
-            return .failed(reason: "FamilyControls .child threw unexpected error: \(error)")
-        }
+        // AuthorizationCenter is @available(macOS, unavailable) in the Xcode 16 SDK —
+        // FamilyControls authorization APIs are iOS/Mac Catalyst only. Cannot probe on native macOS.
+        return .failed(
+            reason: "AuthorizationCenter is unavailable on native macOS (Xcode 16 SDK). " +
+                    "Run this probe on the iOS target to verify FamilyControls .child authorization."
+        )
     }
 }
 

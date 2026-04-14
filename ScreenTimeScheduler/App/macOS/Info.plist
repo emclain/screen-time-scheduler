@@ -4,7 +4,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.example.sts</string>
+    <string>net.emclain.ScreenScheduler</string>
     <key>CFBundleName</key>
     <string>ScreenTimeScheduler</string>
     <key>CFBundleShortVersionString</key>

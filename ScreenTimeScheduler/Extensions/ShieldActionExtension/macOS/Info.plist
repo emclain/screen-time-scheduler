@@ -4,7 +4,7 @@
     <plist version="1.0">
     <dict>
         <key>CFBundleIdentifier</key>
-        <string>com.example.sts.ShieldActionExtension</string>
+        <string>net.emclain.ScreenScheduler.ShieldActionExtension</string>
         <key>CFBundleName</key>
         <string>ShieldActionExtension</string>
         <key>CFBundleShortVersionString</key>

@@ -3,7 +3,7 @@ import os
 // MARK: - Loggers
 
 extension Logger {
-    private static let subsystem = "com.example.sts"
+    private static let subsystem = "net.emclain.ScreenScheduler"
 
     static let auth   = Logger(subsystem: subsystem, category: "auth")
     static let dam    = Logger(subsystem: subsystem, category: "dam")

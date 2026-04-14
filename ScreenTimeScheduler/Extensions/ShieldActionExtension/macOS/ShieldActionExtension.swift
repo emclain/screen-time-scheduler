@@ -1,7 +1,7 @@
 import ManagedSettings
 import os
 
-private let logger = Logger(subsystem: "com.example.sts.ShieldActionExtension", category: "shield")
+private let logger = Logger(subsystem: "net.emclain.ScreenScheduler.ShieldActionExtension", category: "shield")
 
 class ShieldActionExtension: ShieldActionDelegate {
     override func handle(action: ShieldAction,

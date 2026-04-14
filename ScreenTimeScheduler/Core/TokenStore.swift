@@ -13,7 +13,7 @@ final class TokenStore {
     static let shared = TokenStore()
     private init() {}
 
-    private static let suiteName = "group.com.example.sts"
+    private static let suiteName = "group.net.emclain.ScreenScheduler"
     private static let key = "selectedApps"
 
     private let defaults = UserDefaults(suiteName: suiteName)

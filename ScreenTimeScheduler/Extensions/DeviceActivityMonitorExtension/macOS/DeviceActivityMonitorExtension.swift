@@ -3,15 +3,15 @@ import FamilyControls
 import ManagedSettings
 import os
 
-private let logger = Logger(subsystem: "com.example.sts", category: "dam")
+private let logger = Logger(subsystem: "net.emclain.ScreenScheduler", category: "dam")
 
-private let appGroupSuite = "group.com.example.sts"
+private let appGroupSuite = "group.net.emclain.ScreenScheduler"
 private let selectedAppsKey = "selectedApps"
 
 // Keys for missed-callback detection via persistent sequence counters.
 // intervalDidStart and intervalDidEnd should alternate; a gap in either
 // counter indicates a missed callback.  Read with:
-//   log show --predicate 'subsystem == "com.example.sts" AND category == "dam"'
+//   log show --predicate 'subsystem == "net.emclain.ScreenScheduler" AND category == "dam"'
 // or inspect the UserDefaults suite directly to compare counts post-test.
 private let damStartSeqKey = "dam_start_seq"
 private let damEndSeqKey = "dam_end_seq"

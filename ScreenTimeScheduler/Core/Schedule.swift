@@ -26,6 +26,6 @@ extension Window {
 
 #if os(iOS)
 extension DeviceActivityName {
-    static let hardcodedWindow = DeviceActivityName("com.example.sts.window.hardcoded")
+    static let hardcodedWindow = DeviceActivityName("net.emclain.ScreenScheduler.window.hardcoded")
 }
 #endif
