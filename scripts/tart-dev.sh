@@ -85,7 +85,12 @@ until ssh $SSH_OPTS "${SSH_USER}@${VM_IP}" "test -d '${GUEST_MOUNT}'" 2>/dev/nul
 done
 echo "  Share available at ${GUEST_MOUNT}"
 
-# ── 5. Hand off interactive SSH session ───────────────────────────────────
+# ── 5. Unlock login keychain (required for Claude auth in headless sessions) ─
+echo "Unlocking login keychain (enter VM password when prompted)..."
+ssh $SSH_OPTS -t "${SSH_USER}@${VM_IP}" \
+  "security unlock-keychain ~/Library/Keychains/login.keychain-db"
+
+# ── 6. Hand off interactive SSH session ───────────────────────────────────
 # Disable the EXIT trap — we want the VM to keep running after we disconnect.
 trap - EXIT INT TERM
 
