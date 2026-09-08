@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# git shim — bd may READ git, never MUTATE it.
+#
+# Installed ahead of the real git on PATH for bd only (see
+# scripts/install-bd-git-guard.sh). Everything not on the read-only allowlist
+# is refused and logged to .beads/blocked-git.log.
+#
+# Background: commit 766b65a recorded a tree containing only CLAUDE.md and
+# deleted 66 files. bd's documented auto-staging knobs were all already off,
+# and the cause was never reproduced, so this removes bd's ability to mutate
+# git at all rather than trusting a config flag. See bead screen-tm2.
+#
+# Escape hatch: BD_ALLOW_GIT=1 passes everything through.
+
+set -uo pipefail
+
+REAL_GIT="/usr/bin/git"
+[ -x "$REAL_GIT" ] || REAL_GIT="$(PATH=/usr/bin:/bin:/usr/local/bin command -v git)"
+
+if [ "${BD_ALLOW_GIT:-0}" = "1" ]; then
+  exec "$REAL_GIT" "$@"
+fi
+
+# Find the subcommand: first argument that is not a global flag or its value.
+sub=""
+skip_next=0
+for a in "$@"; do
+  if [ "$skip_next" = "1" ]; then skip_next=0; continue; fi
+  case "$a" in
+    -C|--git-dir|--work-tree|--namespace|--exec-path) skip_next=1 ;;
+    -*) ;;
+    *) sub="$a"; break ;;
+  esac
+done
+
+allowed=0
+case "$sub" in
+  rev-parse|status|log|show|diff|ls-files|ls-tree|cat-file|for-each-ref|\
+  describe|var|check-ignore|merge-base|name-rev|blame|rev-list|shortlog|grep)
+    allowed=1 ;;
+  config)
+    # Reads only: --get, --get-all, --get-regexp, --list/-l.
+    case " $* " in
+      *" --get "*|*" --get-all "*|*" --get-regexp "*|*" --list "*|*" -l "*) allowed=1 ;;
+    esac ;;
+  remote)
+    case " $* " in *" -v "*|*" show "*) allowed=1 ;; esac ;;
+esac
+
+if [ "$allowed" = "1" ]; then
+  exec "$REAL_GIT" "$@"
+fi
+
+# Refuse and log.
+root="$("$REAL_GIT" rev-parse --show-toplevel 2>/dev/null || echo .)"
+mkdir -p "$root/.beads" 2>/dev/null
+printf '%s  BLOCKED  git %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" \
+  >> "$root/.beads/blocked-git.log" 2>/dev/null
+echo "git-guard: refused mutating git command from bd: git $*" >&2
+echo "git-guard: logged to .beads/blocked-git.log (override: BD_ALLOW_GIT=1)" >&2
+exit 1

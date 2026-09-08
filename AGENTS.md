@@ -144,6 +144,29 @@ Same obligations as Ad-hoc step 4. The goal: the next agent should be able to ru
 **Stop after one issue.**
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
+## bd must never touch git
+
+`bd` is not allowed to run mutating git commands in this repo. A `bd` wrapper
+earlier on `PATH` runs the real bd with `scripts/git-guard/` prepended, so
+every git call bd makes hits a read-only shim: reads pass through, anything
+that writes is refused and logged to `.beads/blocked-git.log`.
+
+- Installed by `scripts/install-bd-git-guard.sh`, called from both
+  `scripts/setup.sh` and `scripts/bd-setup.sh`. Idempotent.
+- The wrapper lives outside the repo, so a fresh machine or reset VM needs
+  `bd-setup.sh` to run before bd is guarded. It warns if installation fails.
+- **All git operations are done explicitly by you or by the scripts** — never
+  as a side effect of a bd command.
+- Escape hatch, for the rare case bd legitimately needs to write:
+  `BD_ALLOW_GIT=1 bd <command>`. Check `git status` afterwards.
+
+Why: commit 766b65a recorded a tree containing only CLAUDE.md and deleted 66
+tracked files, and was pushed before anyone noticed. bd's documented
+auto-staging knobs (`export.auto`, `export.git-add`, `backup.git-push`) were
+all already off, and the cause was never reproduced — so bd's ability to mutate
+git was removed rather than trusted to a flag. `scripts/pre-commit.hook` also
+aborts any commit deleting more than 10 tracked files. See bead screen-tm2.
+
 ## Beads Reference
 
 - Use `bd` for ALL task tracking — not TodoWrite, TaskCreate, or markdown

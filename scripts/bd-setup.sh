@@ -34,6 +34,12 @@ git config merge.beads-jsonl.driver \
 # Agents use the emclain-agent GitHub identity, which is a contributor.
 git config beads.role contributor 2>/dev/null || true
 
+# ── 0d. Ensure the bd git guard is installed ─────────────────────────────
+# Re-run every session: the wrapper lives outside the repo, so a new machine,
+# container, or reset VM would otherwise silently run an unguarded bd.
+bash "$REPO_ROOT/scripts/install-bd-git-guard.sh" >/dev/null || \
+  echo "WARNING: bd git guard not installed - bd can mutate git (screen-tm2)" >&2
+
 # ── 1. Pull latest ─────────────────────────────────────────────────────────
 # Must happen first so the agent sees all files (PLAN.md, DESIGN.md, etc.)
 # and the freshest issues.jsonl before populating the local Dolt DB.

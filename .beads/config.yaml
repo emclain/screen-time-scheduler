@@ -40,7 +40,11 @@
 # Disabled: .beads/backup/ is on VirtioFS which doesn't support fsync.
 # Issues are exported to .beads/issues.jsonl and committed to git instead.
 backup:
-  enabled: false
+    enabled: false
+    git-push: false
+export:
+    auto: false
+    git-add: false
 
 # Integration settings (access with 'bd config get/set')
 # These are stored in the database, not in this file:

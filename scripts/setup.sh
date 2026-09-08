@@ -45,6 +45,10 @@ else
   echo "dolt already installed: $(command -v dolt)"
 fi
 
+# ── 1c. Install the bd git guard ──────────────────────────────────────────
+# bd must never mutate git in this repo; see AGENTS.md and bead screen-tm2.
+bash "$(dirname "$0")/install-bd-git-guard.sh"
+
 # ── 2. Pull latest ────────────────────────────────────────────────────────
 echo "Pulling latest from origin..."
 git pull --no-rebase origin main
