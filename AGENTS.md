@@ -143,7 +143,6 @@ Same obligations as Ad-hoc step 4. The goal: the next agent should be able to ru
 
 **Stop after one issue.**
 
-<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## bd must never touch git
 
 `bd` is not allowed to run mutating git commands in this repo. A `bd` wrapper
@@ -167,6 +166,7 @@ all already off, and the cause was never reproduced — so bd's ability to mutat
 git was removed rather than trusted to a flag. `scripts/pre-commit.hook` also
 aborts any commit deleting more than 10 tracked files. See bead screen-tm2.
 
+<!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Reference
 
 - Use `bd` for ALL task tracking — not TodoWrite, TaskCreate, or markdown
