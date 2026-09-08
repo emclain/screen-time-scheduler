@@ -41,10 +41,28 @@ Xcode at the machine and not running any probe:
   | 4 (`.child` authorization) | The child's Apple ID, a Family Sharing member managed by a parent |
 
 ### Family Sharing — only for gate 4
-1. The parent Apple ID has the child in their Family group
-2. The parent has set a Screen Time passcode for the child's account
-3. A parent device (iPhone or Mac, signed in to the parent Apple ID) is **nearby
-   and unlocked** — `.child` triggers an approval prompt there
+
+**No app is needed on the parent's device.** `.child` approval is Apple's own
+system flow, not anything this project builds. The parent's **Screen Time
+passcode** is what grants it, and it is typed into a system sheet **on the iMac**
+(RESEARCH.md §1: "the parent-passcode approval flow on the child device").
+
+What must be true:
+
+1. The iMac is signed in to the **child's** Apple ID
+2. That account is a member of the parent's Family Sharing group
+3. **Screen Time is enabled for that child, with a passcode the parent set** — if
+   Screen Time was never turned on for the account, gate 4 cannot run at all
+4. Someone present knows that passcode
+
+Have a parent device nearby anyway. Some OS versions route the approval to the
+parent's device as a notification instead of prompting locally, and it costs
+nothing to have it available. It does **not** need this app installed.
+
+Nothing else from the parent half of the system — CloudKit sync, AFMT approval,
+the parent-context picker — is involved in gates 0–4. App selection for gate 1
+happens on the iMac itself, because tokens are device-scoped and must be picked
+on the device that will enforce them (RESEARCH.md §1, PLAN.md bootstrap step 4).
 
 ### The build machine — not the iMac
 - macOS 14.5 or later with **Xcode 16**. Not Xcode 26: it drops the Screen Time
