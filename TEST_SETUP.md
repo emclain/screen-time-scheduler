@@ -204,6 +204,34 @@ Then work through the policy candidates, on the iMac, retrying after each:
    created as, or converted to, a regular Apple ID, `.child` may not apply — see
    `screen-rdz` on under-13 Apple ID quirks.
 
+Findings so far (2026-09-08, iMac 2017 / Ventura, child Apple ID):
+
+- Screen Time **is** enabled; Downtime off
+- Content & Privacy Restrictions was on. Turning it **off** changed nothing;
+  both members still returned `restricted`. Candidate 2 is eliminated.
+- Failures return promptly, never time out, so the agent is answering
+
+#### The decisive experiment: is it the platform or the account?
+
+Everything so far has tested one account, so `restricted` could equally mean
+"this child account may not authorize" or "Ventura refuses Family Controls to a
+Catalyst app, full stop". Those have opposite consequences for `screen-8ia`, and
+one test separates them:
+
+**Sign in to the iMac as an ordinary adult Apple ID — not the managed child — and
+request `.individual`.** Either a second macOS user account or temporarily
+switching the iCloud account works; a fresh local user is cleaner and reversible.
+
+| Result | Conclusion |
+|--------|------------|
+| `.individual` **succeeds** | The platform works. Catalyst + Ventura + FamilyControls is viable, and the block is this child account's management state. Gates 1–3 can be run on the adult account immediately, which answers the picker and shield questions that actually decide the architecture |
+| `.individual` still `restricted` | Ventura refuses third-party Family Controls to a Catalyst app regardless of account. **That settles `screen-8ia`** — there is no Mac enforcement path, and gates 1–4 are unreachable |
+
+Run this before spending more time on Family Sharing configuration. If the
+platform is the blocker, no amount of account fixing will help; if it is not,
+you can get the remaining gate answers today without resolving the child
+account at all.
+
 Record which of these was true even if none of them fixes it. "Both members
 return `restricted` with Screen Time enabled, no restrictions, no MDM" is a much
 stronger result for `screen-8ia` than "it did not work".

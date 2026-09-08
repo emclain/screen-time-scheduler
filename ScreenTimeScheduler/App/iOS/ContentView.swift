@@ -136,9 +136,10 @@ struct ContentView: View {
 
         authStatus = AuthorizationCenter.shared.authorizationStatus
         let elapsed = Int(Date().timeIntervalSince(started) * 1000)
+        let outcome = (lastAuthError == nil) ? "ok" : "failed"
         logInfo(Logger.auth,
-                "\(LogEvent.authGranted): member=\(name) status=\(statusText) " +
-                "changed=\(before != authStatus) elapsed_ms=\(elapsed)")
+                "\(LogEvent.authResult): member=\(name) outcome=\(outcome) " +
+                "status=\(statusText) changed=\(before != authStatus) elapsed_ms=\(elapsed)")
     }
 
     private static func describe(_ status: AuthorizationStatus) -> String {

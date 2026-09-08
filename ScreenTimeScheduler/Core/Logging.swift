@@ -15,7 +15,10 @@ extension Logger {
 
 enum LogEvent {
     static let authRequested    = "auth_requested"
-    static let authGranted      = "auth_granted"
+    /// Final status after an authorization attempt — logged on BOTH the success
+    /// and failure paths, so it is deliberately not called "granted". Read it
+    /// together with the `changed=` field, not on its own.
+    static let authResult       = "auth_result"
     static let damIntervalStart = "dam_interval_start"
     static let damIntervalEnd   = "dam_interval_end"
     static let damMissedCallback = "dam_missed_callback"
