@@ -9,6 +9,23 @@ set -euo pipefail
 
 CLAUDE="CLAUDE.md"
 
+# ── Guard: refuse commits that wipe the tree ─────────────────────────────
+# On 2026-09-08 a commit recorded a tree containing only CLAUDE.md, deleting
+# 66 files. The working tree was untouched, so it went unnoticed until the
+# next status check - and it had already been pushed. Cause never reproduced
+# (bd list/export stage nothing, and four identical commits before it were
+# fine), so this guard catches the symptom regardless of the cause.
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+  _deleted=$(git diff --cached --diff-filter=D --name-only | wc -l | tr -d ' ')
+  if [ "${_deleted:-0}" -gt 10 ]; then
+    echo "pre-commit: ABORT - this commit would delete ${_deleted} tracked files." >&2
+    echo "  Staged deletions:" >&2
+    git diff --cached --diff-filter=D --name-only | head -5 | sed 's/^/    /' >&2
+    echo "  ...if this is genuinely intended: git commit --no-verify" >&2
+    exit 1
+  fi
+fi
+
 # Only act if CLAUDE.md is staged.
 if ! git diff --cached --name-only | grep -qF "$CLAUDE"; then
   exit 0
