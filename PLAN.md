@@ -205,9 +205,9 @@ ScreenTimeScheduler/
 - `com.apple.developer.family-controls` (development variant)
 - `com.apple.developer.deviceactivity`
 - `com.apple.developer.icloud-services` = CloudKit (Development) + iCloud Documents (for the log file ubiquity container, see Logging)
-- `com.apple.developer.ubiquity-container-identifiers` = `iCloud.com.example.sts`
+- `com.apple.developer.ubiquity-container-identifiers` = `iCloud.net.emclain.ScreenScheduler`
 - `aps-environment` = development
-- App Group `group.com.example.sts`
+- App Group `group.net.emclain.ScreenScheduler`
 - Background modes: remote-notification, processing
 - Hardened runtime + LaunchAgent plist for Mac daemon
 
@@ -270,7 +270,7 @@ When Screen Time fails, the failure is usually silent -- a shield doesn't apply,
 
 **Two sinks, written by every process** (main app, DAM / ShieldConfig / ShieldAction extensions, macOS daemon):
 
-1. **OSLog** (always-on, local). Unified logging under subsystem `com.example.sts` with per-module categories (`sync`, `shield`, `afmt`, `dam`, `auth`, `daemon`). Viewable in Console.app on a tethered Mac or via `log show --predicate 'subsystem == "com.example.sts"'`. Bounded by the OS ring buffer, no quota management. Ground truth for debugging a device that's physically in hand.
+1. **OSLog** (always-on, local). Unified logging under subsystem `net.emclain.ScreenScheduler` with per-module categories (`sync`, `shield`, `afmt`, `dam`, `auth`, `daemon`). Viewable in Console.app on a tethered Mac or via `log show --predicate 'subsystem == "net.emclain.ScreenScheduler"'`. Bounded by the OS ring buffer, no quota management. Ground truth for debugging a device that's physically in hand.
 2. **Append-only NDJSON log file** (durable, remotely readable). Every process also appends one event per line to a per-device log file, rotating daily, capped at ~30 days on disk. The file lives in the app's iCloud Drive **ubiquity container**, so writes are plain `FileManager` calls with no cloud SDK involvement -- iCloud Drive handles sync. Extensions write to the same App Group path; the main app coordinates rotation and cleanup.
 
 Event schema: `ts` (ISO 8601 ms UTC), `dev` (device name), `role`, `cat` (category), `lvl` (`debug`/`info`/`warn`/`error`), `evt` (stable event name), `ctx` (free-form JSON).
@@ -344,7 +344,7 @@ Line-oriented so `tail -f`, `grep`, and `jq` all work directly on the synced fil
    1. Install a build with this logging.  Register a 5-minute DAM schedule.
    2. Let the Mac run through 3+ `intervalDidStart`/`intervalDidEnd` cycles.
       Confirm no `dam_missed_callback` events in Console.app
-      (`log show --predicate 'subsystem == "com.example.sts" AND category == "dam"'`).
+      (`log show --predicate 'subsystem == "net.emclain.ScreenScheduler" AND category == "dam"'`).
    3. Sleep the Mac mid-interval (lid close or System Settings → Sleep).
       Wake it during the next scheduled interval.  Check for `dam_missed_callback`.
    4. Repeat with an overnight sleep.

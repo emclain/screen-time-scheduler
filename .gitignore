@@ -18,3 +18,6 @@ xcuserdata/
 
 # Local Claude Code settings (per-machine permissions)
 .claude/settings.local.json
+
+# Build output staged for transfer to test hardware
+build/
