@@ -1,0 +1,27 @@
+import ManagedSettings
+import os
+
+private let logger = Logger(subsystem: "net.emclain.ScreenScheduler.ShieldActionExtension", category: "shield")
+
+class ShieldActionExtension: ShieldActionDelegate {
+    override func handle(action: ShieldAction,
+                         for application: ApplicationToken,
+                         completionHandler: @escaping (ShieldActionResponse) -> Void) {
+        logger.info("ShieldAction \(String(describing: action)) for app token")
+        completionHandler(.close)
+    }
+
+    override func handle(action: ShieldAction,
+                         for webDomain: WebDomainToken,
+                         completionHandler: @escaping (ShieldActionResponse) -> Void) {
+        logger.info("ShieldAction \(String(describing: action)) for web domain token")
+        completionHandler(.close)
+    }
+
+    override func handle(action: ShieldAction,
+                         for category: ActivityCategoryToken,
+                         completionHandler: @escaping (ShieldActionResponse) -> Void) {
+        logger.info("ShieldAction \(String(describing: action)) for category token")
+        completionHandler(.close)
+    }
+}

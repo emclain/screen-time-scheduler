@@ -1,0 +1,5 @@
+# Use a custom merge driver for the beads issue database.
+# The driver merges by "newest updated_at wins per issue ID" so concurrent
+# agent writes auto-resolve without producing a conflict marker.
+# The driver is registered in .git/config by scripts/setup.sh and bd-setup.sh.
+.beads/issues.jsonl merge=beads-jsonl
