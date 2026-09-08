@@ -38,7 +38,14 @@ git config beads.role contributor 2>/dev/null || true
 # Must happen first so the agent sees all files (PLAN.md, DESIGN.md, etc.)
 # and the freshest issues.jsonl before populating the local Dolt DB.
 echo "Pulling latest from origin..."
-git pull --no-rebase origin main
+# Non-fatal: a missing SSH key or offline network must not stop the agent from
+# rebuilding its local DB from the committed issues.jsonl. Under `set -e` a
+# failed pull would abort the whole script and leave bd unusable.
+if ! git pull --no-rebase origin main; then
+  echo "WARNING: git pull failed - continuing with the local checkout." >&2
+  echo "         Beads state may be stale, and landing work will need a" >&2
+  echo "         working remote. Check SSH keys / GITHUB_TOKEN." >&2
+fi
 
 # ── 2. Detect filesystem and configure dolt mode ───────────────────────────
 # VirtioFS (used when this repo is mounted into a Tart VM) doesn't support
@@ -63,9 +70,20 @@ if [ "$_ON_VIRTIOFS" = "true" ]; then
   DOLT_DATA_DIR="/Users/admin/.beads-dolt-server"
   DOLT_LOG="$DOLT_DATA_DIR/dolt-server.log"
   if ! lsof -i :3307 &>/dev/null 2>&1; then
+    # Resolve dolt from PATH; the old hardcoded /opt/homebrew/bin/dolt broke
+    # silently wherever dolt lived elsewhere or was missing entirely. Only
+    # required when we actually have to start the server - an already-running
+    # server is fine regardless of where its binary came from.
+    DOLT_BIN="$(command -v dolt || true)"
+    if [ -z "$DOLT_BIN" ]; then
+      echo "ERROR: dolt is not installed, and no server is listening on 3307." >&2
+      echo "       bd cannot open its database without it." >&2
+      echo "Run: bash scripts/setup.sh   (or: brew install dolt)" >&2
+      exit 1
+    fi
     echo "Starting dolt sql-server (VirtioFS mode)..."
     mkdir -p "$DOLT_DATA_DIR"
-    nohup /opt/homebrew/bin/dolt sql-server \
+    nohup "$DOLT_BIN" sql-server \
       --host 127.0.0.1 --port 3307 \
       --data-dir "$DOLT_DATA_DIR" \
       > "$DOLT_LOG" 2>&1 &

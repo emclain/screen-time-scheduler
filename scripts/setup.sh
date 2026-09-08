@@ -28,6 +28,23 @@ else
   echo "bd already installed: $(command -v bd)"
 fi
 
+# ── 1b. Install dolt if not already present ───────────────────────────
+# bd stores everything in Dolt and does NOT bundle it. Without dolt on PATH
+# every bd command fails with "Dolt server unreachable", which reads like a
+# server problem rather than a missing dependency.
+if ! command -v dolt &>/dev/null; then
+  echo "Installing dolt..."
+  if command -v brew &>/dev/null; then
+    brew install dolt
+  else
+    echo "ERROR: dolt is not installed and Homebrew is unavailable." >&2
+    echo "Install it manually: https://docs.dolthub.com/introduction/installation" >&2
+    exit 1
+  fi
+else
+  echo "dolt already installed: $(command -v dolt)"
+fi
+
 # ── 2. Pull latest ────────────────────────────────────────────────────────
 echo "Pulling latest from origin..."
 git pull --no-rebase origin main
