@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-VM="${1:-sequoia-xcode16}"
+VM="${1:-sequoia-xcode-16}"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SHARE_NAME="project"
 # macOS guests mount all VirtioFS shares under /Volumes/My Shared Files/<tag>
@@ -40,7 +40,6 @@ else
   echo "Starting VM '${VM}' with share '${SHARE_NAME}' → ${REPO_ROOT} ..."
   tart run "$VM" \
     --dir="${SHARE_NAME}:${REPO_ROOT}" \
-    --no-graphics \
     &
   TART_PID=$!
   # Trap to stop the VM if this script is killed before we hand off to SSH
@@ -85,7 +84,17 @@ until ssh $SSH_OPTS "${SSH_USER}@${VM_IP}" "test -d '${GUEST_MOUNT}'" 2>/dev/nul
 done
 echo "  Share available at ${GUEST_MOUNT}"
 
-# ── 5. Hand off interactive SSH session ───────────────────────────────────
+# ── 5. Unlock login keychain (required for Claude auth in headless sessions) ─
+echo "Unlocking login keychain (enter VM password when prompted)..."
+ssh $SSH_OPTS -t "${SSH_USER}@${VM_IP}" \
+  "security unlock-keychain ~/Library/Keychains/login.keychain-db"
+
+# ── 6. Copy SSH keys ───────────────────────────────────
+if ! ssh -o PasswordAuthentication=no -o BatchMode=yes "${SSH_USER}@${VM_IP}" true; then # && echo "key auth works" || echo "key auth not available"
+    echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAhDCdX+7X8CVjQz5lZrBXr9D5pnvf+mbJZxmcCiMNHy" | ssh "${SSH_USER}@${VM_IP}" "mkdir -p ~/.ssh && cat >> ~/.ssh/authorized_keys"
+fi
+
+# ── 7. Hand off interactive SSH session ───────────────────────────────────
 # Disable the EXIT trap — we want the VM to keep running after we disconnect.
 trap - EXIT INT TERM
 
