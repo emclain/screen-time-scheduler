@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var selection = TokenStore.shared.selection
     @State private var showPicker = false
     @State private var shieldedCount = 0
+    @State private var lastAuthError: String?
 
     /// Shields are written straight from the app process. On Mac Catalyst there
     /// is no DeviceActivityMonitor extension to write them from — the extension
@@ -42,32 +43,63 @@ struct ContentView: View {
 
     // MARK: - Auth
 
-    @ViewBuilder
+    /// Both buttons stay visible in every state, and the raw status is always
+    /// on screen. The earlier version swapped the button out for a label once
+    /// the status left .notDetermined, which looked exactly like "clicking does
+    /// nothing" while actually being "there is no longer a button".
     private var authSection: some View {
-        switch authStatus {
-        case .approved:
-            Label("Authorized", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-        case .denied:
-            Label("Authorization denied — enable in Settings", systemImage: "xmark.circle.fill")
-                .foregroundStyle(.red)
-        default:
-            Button("Request Authorization") {
-                Task { await requestAuth() }
+        VStack(spacing: 10) {
+            Text("Authorization: \(statusText)")
+                .font(.subheadline)
+                .foregroundStyle(authStatus == .approved ? .green : .primary)
+
+            HStack(spacing: 12) {
+                Button("Request .individual") {
+                    Task { await requestAuth(for: .individual) }
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Request .child") {
+                    Task { await requestAuth(for: .child) }
+                }
+                .buttonStyle(.bordered)
             }
-            .buttonStyle(.borderedProminent)
+
+            // Surfaced on screen as well as logged: the machine under test has
+            // no Xcode, and Console can be configured to hide messages.
+            if let lastAuthError {
+                Text(lastAuthError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .textSelection(.enabled)
+                    .multilineTextAlignment(.center)
+            }
         }
     }
 
-    private func requestAuth() async {
-        logInfo(Logger.auth, "\(LogEvent.authRequested): requesting .individual authorization")
+    private var statusText: String {
+        switch authStatus {
+        case .notDetermined: return "notDetermined"
+        case .denied:        return "denied"
+        case .approved:      return "approved"
+        @unknown default:    return "unknown(\(authStatus.rawValue))"
+        }
+    }
+
+    private func requestAuth(for member: FamilyControlsMember) async {
+        let name = (member == .child) ? ".child" : ".individual"
+        lastAuthError = nil
+        logInfo(Logger.auth, "\(LogEvent.authRequested): requesting \(name) authorization")
         do {
-            try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
+            try await AuthorizationCenter.shared.requestAuthorization(for: member)
+            logInfo(Logger.auth, "auth_returned_no_error member=\(name)")
         } catch {
-            logError(Logger.auth, "auth_failed error=\(error)")
+            let detail = "\(error) | localized=\(error.localizedDescription)"
+            lastAuthError = "\(name) failed: \(detail)"
+            logError(Logger.auth, "auth_failed member=\(name) error=\(detail)")
         }
         authStatus = AuthorizationCenter.shared.authorizationStatus
-        logInfo(Logger.auth, "\(LogEvent.authGranted): status=\(authStatus)")
+        logInfo(Logger.auth, "\(LogEvent.authGranted): member=\(name) status=\(statusText)")
     }
 
     // MARK: - Picker

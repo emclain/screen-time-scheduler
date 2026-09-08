@@ -55,12 +55,29 @@ Xcode at the machine and not running any probe:
   `ScreenTimeScheduler/App/iOS/ScreenTimeScheduler.entitlements` (the Catalyst
   build uses the iOS target).
 
-### Console.app, on the iMac
-Open it before first launch and filter **Subsystem** =
-`net.emclain.ScreenScheduler`. Categories in use: `auth`, `shield`, `dam`, `sync`.
+### Logging, on the iMac
+Without Xcode there is no debugger and no crash UI, so the log is the only
+evidence channel you have. **Prefer Terminal over Console.app:**
 
-Leave it running throughout. Without Xcode there is no debugger and no crash UI,
-so this is the only evidence channel you have.
+```bash
+# live, while you run the gates
+log stream --predicate 'subsystem == "net.emclain.ScreenScheduler"' --info --debug
+
+# after the fact, to recover what you missed
+log show --last 30m --predicate 'subsystem == "net.emclain.ScreenScheduler"' --info --debug
+```
+
+Categories in use: `auth`, `shield`, `dam`, `sync`.
+
+If you do use Console.app, filter **Subsystem** = `net.emclain.ScreenScheduler`
+**and turn on Action → Include Info Messages.** Console hides info-level messages
+by default and shows error-level ones, so a failing operation appears in the log
+while the surrounding context does not — which reads as "it only logged once and
+never again". The app now logs at notice level to avoid this, but older builds
+and Apple's own subsystems still emit info.
+
+The app also shows authorization status and the last authorization error on
+screen, so you are not dependent on the log for gate 0.
 
 ---
 
@@ -106,14 +123,31 @@ Run in order. Stop when one fails — that failure is the result.
 
 ### Gate 0 — Does FamilyControls authorize at all on Ventura?
 
-Tap **Request Authorization** (requests `.individual`).
+The app shows **Authorization: <status>** and offers both **Request .individual**
+and **Request .child**. Both buttons stay available in every state, so you can
+always retry.
 
-- **Pass:** status flips to "Authorized"; Console shows `auth_granted`.
-- **Fail:** status stays Not Determined, with `FamilyControlsAgent` errors in
-  Console. This is what happens on macOS 26 and in a VM, where the daemon refuses
-  or is absent. If it fails here, there is no third-party Screen Time on this Mac
-  and gates 1–4 cannot run. **That is a complete answer to `screen-8ia`** — record
-  it and stop.
+Which to use depends on the account signed in to the iMac:
+
+- adult / non-managed Apple ID -> `.individual`
+- Family Sharing child Apple ID -> `.child`
+
+**A managed child account cannot self-authorize `.individual`.** Requesting it
+throws `FamilyControlsError.restricted`, which looks like a platform failure and
+is not one.
+
+Interpreting the outcome — these are three different results, do not conflate them:
+
+| Observed | Means |
+|----------|-------|
+| Status becomes `approved` | Gate 0 passes; continue |
+| `error=restricted` | The daemon answered and refused *this request*. Usually the account type is wrong for the member you asked for, or Screen Time content & privacy restrictions / MDM are active. **The framework is alive** — try the other member, and check System Settings → Screen Time |
+| `error=invalidAccountType` | Wrong member for this account; try the other button |
+| No response, or `FamilyControlsAgent` connection errors (`4099`, error `159`, "No such process") | The daemon is absent or refusing outright. This is the macOS 26 / VM failure. **Only this is a complete answer to `screen-8ia`** — record it and stop |
+
+A semantic error such as `restricted` is meaningfully *better* news than silence:
+it means `FamilyControlsAgent` is present and responding on Ventura, which is
+exactly what macOS 26 does not do.
 
 ### Gate 1 — Does `FamilyActivityPicker` enumerate Mac apps?
 

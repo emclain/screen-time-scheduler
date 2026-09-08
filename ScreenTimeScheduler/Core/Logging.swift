@@ -30,8 +30,15 @@ func logDebug(_ logger: Logger, _ message: String) {
     logger.debug("\(message, privacy: .public)")
 }
 
+/// Uses `notice`, not `info`, deliberately.
+///
+/// Console.app and `log show` both hide info-level messages unless you opt in
+/// (Action -> Include Info Messages, or `--info`). This app is diagnosed on
+/// machines that cannot run Xcode, where the log IS the instrument, so its
+/// events must be visible by default. Notice level is persisted and shown
+/// without any extra flag.
 func logInfo(_ logger: Logger, _ message: String) {
-    logger.info("\(message, privacy: .public)")
+    logger.notice("\(message, privacy: .public)")
 }
 
 func logWarn(_ logger: Logger, _ message: String) {
