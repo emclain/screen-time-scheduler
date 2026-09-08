@@ -86,20 +86,68 @@ struct ContentView: View {
         }
     }
 
+    private enum AuthProbeError: Error, CustomStringConvertible {
+        case timedOut(seconds: Int)
+        var description: String {
+            switch self {
+            case .timedOut(let s): return "no response from FamilyControlsAgent after \(s)s"
+            }
+        }
+    }
+
+    /// Races the authorization request against a timeout.
+    ///
+    /// A request that hangs and one that returns instantly without error are
+    /// indistinguishable from the outside — both look like "the button does
+    /// nothing". Elapsed time separates them, and a hang is itself the
+    /// signature of the agent accepting the connection and never answering.
+    private func requestWithTimeout(_ member: FamilyControlsMember, seconds: Int) async throws {
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try await AuthorizationCenter.shared.requestAuthorization(for: member)
+            }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(seconds) * 1_000_000_000)
+                throw AuthProbeError.timedOut(seconds: seconds)
+            }
+            try await group.next()
+            group.cancelAll()
+        }
+    }
+
     private func requestAuth(for member: FamilyControlsMember) async {
         let name = (member == .child) ? ".child" : ".individual"
         lastAuthError = nil
-        logInfo(Logger.auth, "\(LogEvent.authRequested): requesting \(name) authorization")
+        let before = AuthorizationCenter.shared.authorizationStatus
+        logInfo(Logger.auth,
+                "\(LogEvent.authRequested): member=\(name) status_before=\(Self.describe(before))")
+
+        let started = Date()
         do {
-            try await AuthorizationCenter.shared.requestAuthorization(for: member)
-            logInfo(Logger.auth, "auth_returned_no_error member=\(name)")
+            try await requestWithTimeout(member, seconds: 15)
+            let ms = Int(Date().timeIntervalSince(started) * 1000)
+            logInfo(Logger.auth, "auth_returned_no_error member=\(name) elapsed_ms=\(ms)")
         } catch {
+            let ms = Int(Date().timeIntervalSince(started) * 1000)
             let detail = "\(error) | localized=\(error.localizedDescription)"
-            lastAuthError = "\(name) failed: \(detail)"
-            logError(Logger.auth, "auth_failed member=\(name) error=\(detail)")
+            lastAuthError = "\(name) failed after \(ms)ms: \(detail)"
+            logError(Logger.auth, "auth_failed member=\(name) elapsed_ms=\(ms) error=\(detail)")
         }
+
         authStatus = AuthorizationCenter.shared.authorizationStatus
-        logInfo(Logger.auth, "\(LogEvent.authGranted): member=\(name) status=\(statusText)")
+        let elapsed = Int(Date().timeIntervalSince(started) * 1000)
+        logInfo(Logger.auth,
+                "\(LogEvent.authGranted): member=\(name) status=\(statusText) " +
+                "changed=\(before != authStatus) elapsed_ms=\(elapsed)")
+    }
+
+    private static func describe(_ status: AuthorizationStatus) -> String {
+        switch status {
+        case .notDetermined: return "notDetermined"
+        case .denied:        return "denied"
+        case .approved:      return "approved"
+        @unknown default:    return "unknown(\(status.rawValue))"
+        }
     }
 
     // MARK: - Picker
