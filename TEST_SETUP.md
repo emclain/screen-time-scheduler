@@ -167,6 +167,47 @@ A semantic error such as `restricted` is meaningfully *better* news than silence
 it means `FamilyControlsAgent` is present and responding on Ventura, which is
 exactly what macOS 26 does not do.
 
+#### Troubleshooting `restricted`
+
+Observed on the iMac 2017 (2026-09-08): **both** `.individual` and `.child` return
+`restricted` / "Family Controls is restricted", promptly rather than hanging.
+
+`restricted` means the request reached the daemon and was refused by **policy**,
+so the question is which policy. Our app only sees the opaque enum — the agent
+logs its own reason. Capture that first, before changing any settings:
+
+```bash
+# In one Terminal, then click the button in the app:
+log stream --predicate 'process == "FamilyControlsAgent" OR subsystem BEGINSWITH "com.apple.FamilyControls"' --info --debug
+
+# Or after the fact:
+log show --last 10m --predicate 'process == "FamilyControlsAgent" OR subsystem BEGINSWITH "com.apple.FamilyControls"' --info --debug
+```
+
+Then work through the policy candidates, on the iMac, retrying after each:
+
+1. **Is Screen Time on for this account?** System Settings → Screen Time. If it
+   was never enabled there is no policy for a third party to attach to. Turn it
+   on and retry.
+2. **Content & Privacy Restrictions.** If enabled, it can restrict Family Controls
+   outright. Note the current state, turn it off (needs the Screen Time passcode),
+   retry, and turn it back on afterwards.
+3. **Is Screen Time managed by the parent?** The pane should say so. A child whose
+   Screen Time is managed remotely behaves differently from one managed locally.
+4. **Device management / configuration profiles.** System Settings → Privacy &
+   Security → Profiles, or `profiles list`. An MDM profile — a school-issued one,
+   for instance — can restrict Family Controls, and a Managed Apple ID (Apple
+   School Manager) will refuse third-party Screen Time regardless of Family
+   Sharing.
+5. **Account age.** Family Sharing distinguishes a true child account from a
+   standard Apple ID that happens to be in the family group. If the account was
+   created as, or converted to, a regular Apple ID, `.child` may not apply — see
+   `screen-rdz` on under-13 Apple ID quirks.
+
+Record which of these was true even if none of them fixes it. "Both members
+return `restricted` with Screen Time enabled, no restrictions, no MDM" is a much
+stronger result for `screen-8ia` than "it did not work".
+
 ### Gate 1 — Does `FamilyActivityPicker` enumerate Mac apps?
 
 Tap **Choose Apps to Block**.
