@@ -306,7 +306,7 @@ app left shielded stays shielded until this app clears it.
    | `.familyControlsChildAuth` | Gate 4 | `.enforced` / `.crashes` / `.silentNoOp` |
    | `.damCallbacksReliableAcrossSleepWake` | — | **Not answerable on a Mac.** The extension point does not exist on Catalyst; this is an iPad question now |
 
-   Note `screen-krb` first: `Platform.current` reports Catalyst as `.iOS`, so
+   Note `screen-bpk` first: `Platform.current` reports Catalyst as `.iOS`, so
    `macOS13Support()` is currently unreachable from the Mac build and editing it
    alone will not change what the app believes.
 
