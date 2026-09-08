@@ -7,19 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		03D8891293F9419BA6DF8016 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CD7926D78C1849538D671F03 /* Info.plist */; };
+		07F0FAD29DADE4A30A2210C6 /* DeviceActivityMonitorExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C66F6C4C40A42A23E29A08D3 /* DeviceActivityMonitorExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4C4014B0909249D2B1F00446 /* ScreenTimeSchedulerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD4174E72D0E4A62B764769D /* ScreenTimeSchedulerApp.swift */; };
 		4F82A062A67E46B596602E51 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF561B1F3E1B415F9F26C52B /* Assets.xcassets */; };
-		5BA56951351140188C93B096 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 22E16B0F96A944E3AF3C9DA7 /* Info.plist */; };
 		5BE1D506AE9A422A8EB9B024 /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104A32AB95845B5B00629DB /* Placeholder.swift */; };
 		69640FDE57B7498998F01E24 /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1999BD2CFC1A40EC9F590B92 /* Logging.swift */; };
 		6F28E10A8D4447399BD2BABA /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5C452902C4F4B85998D2FD7 /* ContentView.swift */; };
 		7064CA779B094BCEBCF3F828 /* ShieldConfigurationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E447121ECF648BD98A9A117 /* ShieldConfigurationExtension.swift */; };
 		7D0314A548534BD098BB557E /* ScreenTimeSchedulerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EC61E12B322401EA720DEB5 /* ScreenTimeSchedulerApp.swift */; };
+		801E70BC9AB9A8D78F5248BA /* ShieldConfigurationExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 1283569A65604651DE4C0919 /* ShieldConfigurationExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		87998F1E31C24165B3E95757 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 939B19C03398490191BAB942 /* Assets.xcassets */; };
 		AABB1122CC33DD44EE55FF61 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CC33DD44EE55FF60 /* TokenStore.swift */; };
 		AABB1122CC33DD44EE55FF62 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABB1122CC33DD44EE55FF60 /* TokenStore.swift */; };
-		B38F558FA57F4D6993BD7D8C /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 4E45D5FC5B26458C8F800217 /* Info.plist */; };
 		C5809883234A4ACDB43DE2BB /* ShieldActionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C73FBF2DBC54D45B6C31D6A /* ShieldActionExtension.swift */; };
 		CC11AA22BB33DD44EE55F004 /* CapabilityMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11AA22BB33DD44EE55F001 /* CapabilityMatrix.swift */; };
 		CC11AA22BB33DD44EE55F005 /* CapabilityProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC11AA22BB33DD44EE55F002 /* CapabilityProbe.swift */; };
@@ -27,6 +26,7 @@
 		CC33DD44EE55FF66AA11BB22 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* Schedule.swift */; };
 		CC3815A3150C40A284CF8924 /* DeviceActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76F601F861147928B04CBA2 /* DeviceActivityMonitorExtension.swift */; };
 		D9B714BBA81440AB8A2D9FF2 /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1999BD2CFC1A40EC9F590B92 /* Logging.swift */; };
+		DBE300E5C2A9F1F61A3C4CB6 /* ShieldActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 11FABEAE17206009C3FB6E95 /* ShieldActionExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DD44EE55FF66AA11BB22CC33 /* ScheduleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF66AA11 /* ScheduleManager.swift */; };
 		DE34327CE9B249C0B523E4DB /* Placeholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104A32AB95845B5B00629DB /* Placeholder.swift */; };
 		EE55FF66AA11BB22CC33DD44 /* Schedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA11BB22CC33DD44EE55FF66 /* Schedule.swift */; };
@@ -34,7 +34,49 @@
 		FF66AA11BB22CC33DD44EE55 /* ScheduleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF66AA11 /* ScheduleManager.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		637EF48E74E7DF792ECF640D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 33700D45D9B847C7A0F6D4B1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 21188159C28E46F4B3CC6B97;
+			remoteInfo = ShieldActionExtension;
+		};
+		70AC693C510FE54ACE33C678 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 33700D45D9B847C7A0F6D4B1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D6563399BB704474AF33FA7B;
+			remoteInfo = ShieldConfigurationExtension;
+		};
+		BDA59C46040B2C0ECCEF18AF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 33700D45D9B847C7A0F6D4B1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 735ABB72B9994B179DFB3185;
+			remoteInfo = DeviceActivityMonitorExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D713431DD0C155FA114D31FA /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				07F0FAD29DADE4A30A2210C6 /* DeviceActivityMonitorExtension.appex in Embed Foundation Extensions */,
+				801E70BC9AB9A8D78F5248BA /* ShieldConfigurationExtension.appex in Embed Foundation Extensions */,
+				DBE300E5C2A9F1F61A3C4CB6 /* ShieldActionExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		11FABEAE17206009C3FB6E95 /* ShieldActionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldActionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		1283569A65604651DE4C0919 /* ShieldConfigurationExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShieldConfigurationExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		1999BD2CFC1A40EC9F590B92 /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		22E16B0F96A944E3AF3C9DA7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3ACDC1B04EE0458EA96F65B9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -46,6 +88,7 @@
 		4E45D5FC5B26458C8F800217 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		500276BD97454FEF8AA920CF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5104A32AB95845B5B00629DB /* Placeholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Placeholder.swift; sourceTree = "<group>"; };
+		617F9F700058D48A3EFF5E83 /* ScreenTimeScheduler.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScreenTimeScheduler.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		661AE5A1045043119A6E0522 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		6B11F6F58673411CA32A982C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7E013AD321AD4059AE36D179 /* ShieldActionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShieldActionExtension.entitlements; sourceTree = "<group>"; };
@@ -54,6 +97,7 @@
 		8F8E2898DAE94F89A823D065 /* ShieldActionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldActionExtension.swift; sourceTree = "<group>"; };
 		9343B34B0E4B475F86ED37EE /* ScreenTimeSchedulerMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ScreenTimeSchedulerMac.entitlements; sourceTree = "<group>"; };
 		939B19C03398490191BAB942 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		999E4EA2EBD21C477E666918 /* ScreenTimeSchedulerMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScreenTimeSchedulerMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9DAEAEAAC21B46BE83E63A84 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA11BB22CC33DD44EE55FF66 /* Schedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Schedule.swift; sourceTree = "<group>"; };
 		AABB1122CC33DD44EE55FF60 /* TokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
@@ -63,6 +107,7 @@
 		BE29BF90BE0C4ADCB2EDAB0A /* ShieldActionExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShieldActionExtension.entitlements; sourceTree = "<group>"; };
 		BF561B1F3E1B415F9F26C52B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C5C452902C4F4B85998D2FD7 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C66F6C4C40A42A23E29A08D3 /* DeviceActivityMonitorExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DeviceActivityMonitorExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC11AA22BB33DD44EE55F001 /* CapabilityMatrix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapabilityMatrix.swift; sourceTree = "<group>"; };
 		CC11AA22BB33DD44EE55F002 /* CapabilityProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapabilityProbe.swift; sourceTree = "<group>"; };
 		CD7926D78C1849538D671F03 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -143,7 +188,7 @@
 			path = ScreenTimeScheduler;
 			sourceTree = "<group>";
 		};
-		33AEEEBA733B43268D89A464 /* ScreenTimeScheduler */ = {
+		33AEEEBA733B43268D89A464 = {
 			isa = PBXGroup;
 			children = (
 				24E7C32632674AC3AFC03DEE /* ScreenTimeScheduler */,
@@ -285,6 +330,11 @@
 		F1DC135D192B4463B40CD998 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				617F9F700058D48A3EFF5E83 /* ScreenTimeScheduler.app */,
+				999E4EA2EBD21C477E666918 /* ScreenTimeSchedulerMac.app */,
+				C66F6C4C40A42A23E29A08D3 /* DeviceActivityMonitorExtension.appex */,
+				1283569A65604651DE4C0919 /* ShieldConfigurationExtension.appex */,
+				11FABEAE17206009C3FB6E95 /* ShieldActionExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -306,6 +356,7 @@
 			);
 			name = ShieldActionExtension;
 			productName = ShieldActionExtension;
+			productReference = 11FABEAE17206009C3FB6E95 /* ShieldActionExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		735ABB72B9994B179DFB3185 /* DeviceActivityMonitorExtension */ = {
@@ -322,6 +373,7 @@
 			);
 			name = DeviceActivityMonitorExtension;
 			productName = DeviceActivityMonitorExtension;
+			productReference = C66F6C4C40A42A23E29A08D3 /* DeviceActivityMonitorExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		ACC3426BDAE14905A6B796B0 /* ScreenTimeSchedulerMac */ = {
@@ -338,6 +390,7 @@
 			);
 			name = ScreenTimeSchedulerMac;
 			productName = ScreenTimeSchedulerMac;
+			productReference = 999E4EA2EBD21C477E666918 /* ScreenTimeSchedulerMac.app */;
 			productType = "com.apple.product-type.application";
 		};
 		CB6E30357CC64D93876588AF /* ScreenTimeScheduler */ = {
@@ -347,13 +400,18 @@
 				FEE797CC14CB4A0083B2B42A /* Sources */,
 				9B5C9C83AE0C445FA0AB4EFE /* Resources */,
 				45E0DEC4BD04403DA38CF9BF /* Frameworks */,
+				D713431DD0C155FA114D31FA /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E5BFAC6FF7B82E014FAB3F32 /* PBXTargetDependency */,
+				25D46E188056B6B2BF4BC282 /* PBXTargetDependency */,
+				6CD3D08354DFE1417483D545 /* PBXTargetDependency */,
 			);
 			name = ScreenTimeScheduler;
 			productName = ScreenTimeScheduler;
+			productReference = 617F9F700058D48A3EFF5E83 /* ScreenTimeScheduler.app */;
 			productType = "com.apple.product-type.application";
 		};
 		D6563399BB704474AF33FA7B /* ShieldConfigurationExtension */ = {
@@ -370,6 +428,7 @@
 			);
 			name = ShieldConfigurationExtension;
 			productName = ShieldConfigurationExtension;
+			productReference = 1283569A65604651DE4C0919 /* ShieldConfigurationExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -405,7 +464,7 @@
 				en,
 				Base,
 			);
-			mainGroup = 33AEEEBA733B43268D89A464 /* ScreenTimeScheduler */;
+			mainGroup = 33AEEEBA733B43268D89A464;
 			productRefGroup = F1DC135D192B4463B40CD998 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -424,7 +483,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				03D8891293F9419BA6DF8016 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -432,7 +490,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5BA56951351140188C93B096 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -456,7 +513,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B38F558FA57F4D6993BD7D8C /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -519,6 +575,30 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		25D46E188056B6B2BF4BC282 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ShieldConfigurationExtension;
+			platformFilter = ios;
+			target = D6563399BB704474AF33FA7B /* ShieldConfigurationExtension */;
+			targetProxy = 70AC693C510FE54ACE33C678 /* PBXContainerItemProxy */;
+		};
+		6CD3D08354DFE1417483D545 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ShieldActionExtension;
+			platformFilter = ios;
+			target = 21188159C28E46F4B3CC6B97 /* ShieldActionExtension */;
+			targetProxy = 637EF48E74E7DF792ECF640D /* PBXContainerItemProxy */;
+		};
+		E5BFAC6FF7B82E014FAB3F32 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = DeviceActivityMonitorExtension;
+			platformFilter = ios;
+			target = 735ABB72B9994B179DFB3185 /* DeviceActivityMonitorExtension */;
+			targetProxy = BDA59C46040B2C0ECCEF18AF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		183B9F29FB24408F8F52C9C9 /* Debug */ = {

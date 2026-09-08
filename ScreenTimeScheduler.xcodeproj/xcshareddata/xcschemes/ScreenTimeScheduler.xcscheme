@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CB6E30357CC64D93876588AF"
-               BuildableName = "ScreenTimeScheduler"
+               BuildableName = "ScreenTimeScheduler.app"
                BlueprintName = "ScreenTimeScheduler"
                ReferencedContainer = "container:ScreenTimeScheduler.xcodeproj">
             </BuildableReference>
@@ -55,7 +55,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CB6E30357CC64D93876588AF"
-            BuildableName = "ScreenTimeScheduler"
+            BuildableName = "ScreenTimeScheduler.app"
             BlueprintName = "ScreenTimeScheduler"
             ReferencedContainer = "container:ScreenTimeScheduler.xcodeproj">
          </BuildableReference>
